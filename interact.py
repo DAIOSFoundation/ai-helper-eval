@@ -182,11 +182,11 @@ class InteractiveSession:
             else:
                 return len(self.action_templates) - 1  # 결과 출력
         elif intent == 'confused':
-            # 혼란 의도에는 현재 질문 반복
-            if current_question_index == 0:
-                return 1  # 첫 번째 질문
+            # 혼란 의도에는 다음 질문으로 진행 (반복하지 않음)
+            if current_question_index < 3:
+                return current_question_index + 1
             else:
-                return min(current_question_index, len(self.action_templates) - 2)
+                return len(self.action_templates) - 1  # 결과 출력
         elif intent == 'refuse':
             # 거부 의도에는 종료
             return len(self.action_templates) - 1
