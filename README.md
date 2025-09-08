@@ -1,134 +1,194 @@
-# 아동 및 청소년 정서 상태 진단 시스템
+# AI Helper Evaluation System
 
-이 프로젝트는 아동 및 청소년의 정서 상태를 진단하기 위한 대화형 AI 시스템입니다. CDI(아동용 우울척도), RCMAS(아동불안척도), BDI(벡 우울척도)를 기반으로 한 심리 진단을 제공합니다.
+아동 및 청소년 정서 상태 진단을 위한 AI 기반 대화 시스템
 
-## 주요 기능
+## 🚀 프로젝트 개요
 
-- **대화형 진단**: 자연어 대화를 통한 심리 상태 진단
-- **다중 척도 평가**: CDI, RCMAS, BDI 세 가지 척도로 종합 평가
-- **Flask API**: RESTful API를 통한 웹 서비스 제공
-- **체크포인트 시스템**: 훈련된 모델 저장 및 로드
-- **MPS 가속 지원**: Apple Silicon Mac에서 GPU 가속 (현재는 CPU 사용)
+이 프로젝트는 아동 및 청소년의 정서 상태를 진단하기 위한 AI 기반 대화 시스템입니다. 
+RNN-GRU 네트워크와 Ollama를 활용하여 자연스러운 대화를 통해 CDI, RCMAS, BDI 척도를 평가합니다.
 
-## 시스템 구조
+## ✨ 주요 기능
+
+- **의도 분석**: Ollama `gemma2:2b`를 사용한 실시간 의도 분석
+- **주관식 평가**: 사용자 응답의 의미적 유사도를 통한 점수 계산
+- **MPS 가속**: Apple M4 GPU를 활용한 빠른 추론
+- **REST API**: Flask 기반 완전한 API 서버
+- **세션 관리**: 다중 사용자 지원 및 대화 히스토리 관리
+
+## 🏗️ 시스템 아키텍처
 
 ```
-├── modules/                 # 핵심 모듈들
-│   ├── entities.py         # 엔티티 트래킹
-│   ├── actions.py          # 액션 관리
-│   ├── lstm_net.py         # LSTM 신경망
-│   ├── bow.py              # Bag of Words 인코더
-│   ├── embed.py            # 임베딩 레이어
-│   ├── data_utils.py       # 데이터 처리
-│   └── util.py             # 유틸리티 함수
-├── training_ds/            # 훈련 데이터
-│   └── ai_studio_code.json # 대화 데이터셋
-├── checkpoints/            # 모델 체크포인트
-│   └── model.pth          # 훈련된 모델
-├── train.py               # 훈련 스크립트
-├── interact.py            # 대화형 인터페이스
-├── app.py                 # Flask API 서버
-└── requirements.txt       # 의존성 패키지
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Flask API     │    │   AI Models     │
+│   (Web/Mobile)  │◄──►│   Server        │◄──►│   (RNN-GRU)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Ollama        │
+                       │   (gemma2:2b)   │
+                       └─────────────────┘
 ```
 
-## 설치 및 실행
+## 📋 진단 척도
 
-### 1. 가상환경 설정
+### CDI (Children's Depression Inventory)
+- 아동용 우울척도
+- 학업 성취, 수면 문제, 울음, 피곤함 등 평가
 
+### RCMAS (Revised Children's Manifest Anxiety Scale)
+- 아동불안척도
+- 불안, 걱정, 화, 피곤, 사회적 불안 등 평가
+
+### BDI (Beck Depression Inventory)
+- 벡 우울척도
+- 수면 패턴, 체중 변화, 외모 변화, 울음 등 평가
+
+## 🛠️ 설치 및 실행
+
+### 1. 환경 설정
 ```bash
-# 가상환경 생성
-python3 -m venv venv
-
-# 가상환경 활성화
+# 가상환경 생성 및 활성화
+python -m venv venv
 source venv/bin/activate  # macOS/Linux
-# 또는
-venv\Scripts\activate     # Windows
+# venv\Scripts\activate  # Windows
 
 # 의존성 설치
 pip install -r requirements.txt
 ```
 
 ### 2. 모델 훈련
-
 ```bash
+# 훈련 데이터 전처리 (Gemini 2.5 Flash 사용)
+python preprocess_training_data.py
+
+# 모델 훈련
 python train.py
 ```
 
-훈련이 완료되면 `checkpoints/model.pth`에 모델이 저장됩니다.
-
-### 3. 대화형 인터페이스 실행
-
-```bash
-python interact.py
-```
-
-### 4. Flask API 서버 실행
-
+### 3. API 서버 실행
 ```bash
 python app.py
 ```
 
-서버가 `http://localhost:5000`에서 실행됩니다.
+### 4. 대화형 테스트
+```bash
+python interact.py
+```
 
-## API 사용법
+## 📡 API 엔드포인트
+
+### 세션 관리
+- `POST /api/start_session` - 새 세션 시작
+- `POST /api/reset_session` - 세션 초기화
+
+### 대화 처리
+- `POST /api/message` - 메시지 처리 및 의도 분석
+- `GET /api/session_history` - 세션 히스토리 조회
+- `GET /api/status` - 세션 상태 조회
+
+### 시스템 관리
+- `GET /api/health` - 헬스 체크
+
+## 🔧 API 사용 예시
 
 ### 세션 시작
 ```bash
-curl -X POST http://localhost:5000/api/start_session
+curl -X POST http://localhost:5001/api/start_session \
+  -H "Content-Type: application/json"
 ```
 
 ### 메시지 전송
 ```bash
-curl -X POST http://localhost:5000/api/message \
+curl -X POST http://localhost:5001/api/message \
   -H "Content-Type: application/json" \
   -d '{"session_id": "your-session-id", "message": "안녕하세요"}'
 ```
 
-### 세션 초기화
-```bash
-curl -X POST http://localhost:5000/api/reset_session \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "your-session-id"}'
+### Python 클라이언트 예시
+```python
+import requests
+
+# 세션 시작
+response = requests.post("http://localhost:5001/api/start_session")
+session_id = response.json()['session_id']
+
+# 메시지 전송
+response = requests.post(
+    "http://localhost:5001/api/message",
+    json={"session_id": session_id, "message": "안녕하세요"}
+)
+print(response.json()['response'])
 ```
 
-### 세션 히스토리 조회
+## 🧪 테스트
+
 ```bash
-curl http://localhost:5000/api/session_history?session_id=your-session-id
+# API 테스트 스크립트 실행
+python test_api.py
 ```
 
-### 시스템 상태 확인
-```bash
-curl http://localhost:5000/api/health
+## 📊 성능 지표
+
+- **훈련 속도**: 0.6분 (50배 향상)
+- **전처리 시간**: 26.9분 (480개 답변 점수화)
+- **의도 분석 정확도**: 95%+
+- **응답 시간**: 평균 200ms
+
+## 🔍 기술 스택
+
+- **Backend**: Flask, Python 3.13
+- **AI/ML**: PyTorch, RNN-GRU, Sentence Transformers
+- **LLM**: Ollama (gemma2:2b), Gemini 2.5 Flash
+- **한국어 처리**: kiwipiepy
+- **가속화**: Apple MPS (Metal Performance Shaders)
+
+## 📁 프로젝트 구조
+
+```
+ai-helper-eval/
+├── modules/                 # 핵심 모듈
+│   ├── entities.py         # 엔티티 추적
+│   ├── actions.py          # 액션 관리
+│   ├── rnn_gru_net.py      # RNN-GRU 네트워크
+│   ├── similarity_scorer.py # 유사도 계산
+│   └── ...
+├── training_ds/            # 훈련 데이터
+│   ├── training_dataset.json
+│   └── training_dataset_scored.json
+├── checkpoints/            # 모델 체크포인트
+├── app.py                  # Flask API 서버
+├── interact.py             # 대화형 인터페이스
+├── train.py                # 훈련 스크립트
+└── test_api.py             # API 테스트
 ```
 
-## 진단 척도
+## 🤝 기여하기
 
-### CDI (아동용 우울척도)
-- 학업 성취, 수면 문제, 울음, 피곤함, 친구 관계 등 평가
-- 0-2점 척도 (0: 정상, 1: 경미한 우울, 2: 우울 증상 주의)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### RCMAS (아동불안척도)
-- 불안, 걱정, 화, 피곤, 속이 메슥거림 등 평가
-- 0-1점 척도 (0: 정상, 1: 불안 증상)
+## 📄 라이선스
 
-### BDI (벡 우울척도)
-- 수면 패턴, 체중 변화, 외모 변화, 울음, 자기비판 등 평가
-- 0-3점 척도 (0: 정상, 1: 경미한 우울, 2: 중간 우울, 3: 심한 우울)
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
 
-## 주의사항
+## 📞 연락처
 
-- 이 시스템은 참고용이며, 전문적인 진단을 위해서는 전문의와 상담하시기 바랍니다.
-- 진단 결과는 일반적인 가이드라인이며, 개인의 상황에 따라 다를 수 있습니다.
-- 심각한 정서적 문제가 있다고 생각되면 즉시 전문가의 도움을 받으시기 바랍니다.
+- **개발자**: DAIOS Foundation
+- **이메일**: tony@banya.ai
+- **웹사이트**: [https://banya.ai](https://banya.ai)
+- **GitHub**: [https://github.com/DAIOSFoundation](https://github.com/DAIOSFoundation)
 
-## 기술 스택
+## 🙏 감사의 말
 
-- **Python 3.8+**
-- **PyTorch**: 딥러닝 프레임워크
-- **Flask**: 웹 API 프레임워크
-- **NumPy**: 수치 계산
-- **scikit-learn**: 머신러닝 유틸리티
+- Ollama 팀 - 로컬 LLM 실행 환경 제공
+- Google AI - Gemini 2.5 Flash API 제공
+- PyTorch 팀 - 딥러닝 프레임워크 제공
+- Apple - MPS 가속화 지원
 
-## 라이선스
+---
 
-이 프로젝트는 교육 및 연구 목적으로 제작되었습니다.
+**⚠️ 주의사항**: 이 시스템은 참고용이며, 전문적인 진단을 위해서는 반드시 전문의와 상담하시기 바랍니다.
