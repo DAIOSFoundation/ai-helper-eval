@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../api/dashboard';
-
+// User 인터페이스를 인라인으로 정의
 interface User {
   id: string;
   username: string;
@@ -9,6 +9,16 @@ interface User {
   role: string;
   created_at: string;
 }
+
+// User 인터페이스는 src/types/dashboard.ts로 이동
+// interface User {
+//   id: string;
+//   username: string;
+//   email: string;
+//   full_name?: string;
+//   role: string;
+//   created_at: string;
+// }
 
 interface TestSession {
   id: string;
@@ -151,7 +161,7 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full w-full divide-y divide-gray-200"> {/* w-full 클래스 추가 */}
+            <table className="min-w-full w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   {tableHeaders.map(header => (
@@ -219,7 +229,7 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
             </table>
           </div>
         )}
-        
+
         {/* 상세 리포트 모달 (App.tsx에서 렌더링하도록 변경) */}
         {/* {selectedSessionId && (
           <DetailedReport

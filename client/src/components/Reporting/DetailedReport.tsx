@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../api/dashboard';
 import ExpertScoreInput from './ExpertScoreInput';
 import { getTestTypeLabel } from '../../utils/helpers'; // 유틸리티 함수 임포트
-
+// User 인터페이스를 인라인으로 정의
 interface User {
   id: string;
   username: string;
@@ -11,6 +11,16 @@ interface User {
   role: string;
   created_at: string;
 }
+
+// User 인터페이스는 src/types/dashboard.ts로 이동
+// interface User {
+//   id: string;
+//   username: string;
+//   email: string;
+//   full_name?: string;
+//   role: string;
+//   created_at: string;
+// }
 
 interface TestResponse {
   id: string;
@@ -47,6 +57,7 @@ const DetailedReport: React.FC<DetailedReportProps> = ({ user, sessionId, onBack
   const [sessionData, setSessionData] = useState<any>(null);
   const [responses, setResponses] = useState<TestResponse[]>([]);
   const [groupedScores, setGroupedScores] = useState<any>(null);
+  const [allUserSessions, setAllUserSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedResponse, setSelectedResponse] = useState<TestResponse | null>(null);
@@ -73,6 +84,10 @@ const DetailedReport: React.FC<DetailedReportProps> = ({ user, sessionId, onBack
       // 그룹 점수는 현재 세션만 사용
       const groupedScoresResponse = await dashboardAPI.getSessionGroupedScores(sessionId);
       setGroupedScores(groupedScoresResponse);
+      
+      // 사용자의 모든 세션 데이터 가져오기 (회차별 분석용)
+      const allSessionsResponse = await dashboardAPI.getUserSessions(user.id, 100);
+      setAllUserSessions(allSessionsResponse.sessions || []);
       
     } catch (err: any) {
       console.error('DetailedReport API error:', err);
@@ -306,6 +321,115 @@ const DetailedReport: React.FC<DetailedReportProps> = ({ user, sessionId, onBack
               </div>
             )}
           </div>
+
+          {/* 회차별 분석 */}
+          {allUserSessions.length > 0 && (
+            <div className="bg-white rounded-xl p-6 mb-6 shadow-md border border-gray-200">
+              <h3 className="text-2xl font-bold mb-6 text-gray-800">회차별 분석</h3>
+              
+              {/* 테스트 타입별로 그룹화 */}
+              {Object.entries(
+                allUserSessions.reduce((acc: any, session: any) => {
+                  const testType = session.test_type;
+                  if (!acc[testType]) {
+                    acc[testType] = [];
+                  }
+                  acc[testType].push(session);
+                  return acc;
+                }, {})
+              ).map(([testType, testSessions]: [string, any]) => (
+                <div key={testType} className="mb-8">
+                  <h4 className="text-xl font-bold text-gray-800 mb-4">
+                    {getTestTypeLabel(testType)} - 회차별 분석
+                  </h4>
+                  
+                  {/* 점수 변화 추이 차트 */}
+                  {testSessions.length > 1 && (
+                    <div className="mb-6">
+                      <h5 className="text-lg font-semibold text-gray-700 mb-3">점수 변화 추이</h5>
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="h-64 flex items-end justify-between space-x-2">
+                          {testSessions.map((session: any, index: number) => {
+                            const maxScore = Math.max(...testSessions.map((s: any) => s.total_score));
+                            const height = (session.total_score / maxScore) * 100;
+                            return (
+                              <div key={session.id} className="flex flex-col items-center flex-1">
+                                <div className="w-full bg-indigo-600 rounded-t" style={{ height: `${height}%` }}></div>
+                                <div className="text-xs text-gray-600 mt-2 text-center">
+                                  <div className="font-bold">{session.session_round}회차</div>
+                                  <div className="text-indigo-600 font-semibold">{session.total_score.toFixed(1)}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-4 text-center">
+                          <div className="inline-flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                            <span className="inline-block w-3 h-3 bg-indigo-600 rounded-full mr-2"></span>
+                            점수 범위: 0.0 ~ {Math.max(5, Math.ceil(Math.max(...testSessions.map((s: any) => s.total_score)) * 1.1))}.0
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 회차별 상세 정보 */}
+                  <div className="space-y-2">
+                    <h5 className="text-lg font-semibold text-gray-700">회차별 상세 정보</h5>
+                    {testSessions.map((session: any) => (
+                      <div key={session.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 shadow-sm">
+                        <div className="mb-2 pb-2 border-b border-gray-100 flex justify-between items-center">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-indigo-600">{session.session_round}회차</div>
+                              <div className="text-xs text-gray-500">회차</div>
+                            </div>
+                            <div className="text-center">
+                              <div className={`text-2xl font-bold ${getScoreColor(session.total_score)}`}>
+                                {session.total_score.toFixed(1)}
+                              </div>
+                              <div className="text-xs text-gray-500">총점</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-green-600">
+                                {session.completed_questions}/{session.total_questions}
+                              </div>
+                              <div className="text-xs text-gray-500">완료율</div>
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-gray-600">
+                            <div>시작: {new Date(session.started_at).toLocaleString('ko-KR')}</div>
+                            {session.completed_at && (
+                              <div>완료: {new Date(session.completed_at).toLocaleString('ko-KR')}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 평가 카테고리별 점수 섹션 */}
+                        {session.question_category_scores && session.question_category_scores.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <h6 className="text-sm font-semibold text-gray-700 mb-2">평가 카테고리별 점수</h6>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {session.question_category_scores.map((categoryScore: any, catIndex: number) => (
+                                <div key={catIndex} className="bg-white rounded-lg p-2 border border-gray-200">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-gray-700">{categoryScore.question_category}</span>
+                                    <span className={`text-sm font-bold ${getScoreColor(categoryScore.avg_ai_score)}`}>
+                                      {categoryScore.avg_ai_score.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* 응답 상세 분석 */}
           <div>

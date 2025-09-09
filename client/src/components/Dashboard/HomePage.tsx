@@ -3,7 +3,7 @@ import DashboardStats from './DashboardStats';
 import UserProgress from './UserProgress';
 // import AdminUserProgress from './AdminUserProgress'; // AdminUserProgress 임포트 제거
 import SessionList from './SessionList'; // SessionList 추가
-
+// User 인터페이스를 인라인으로 정의
 interface User {
   id: string;
   username: string;
@@ -12,6 +12,16 @@ interface User {
   role: string;
   created_at: string;
 }
+
+// User 인터페이스는 src/types/dashboard.ts로 이동
+// interface User {
+//   id: string;
+//   username: string;
+//   email: string;
+//   full_name?: string;
+//   role: string;
+//   created_at: string;
+// }
 
 interface HomePageProps {
   user: User;

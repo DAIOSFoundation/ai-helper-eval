@@ -13,6 +13,15 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { getTestTypeLabel } from '../../utils/helpers'; // 유틸리티 함수 임포트
+// User 인터페이스를 인라인으로 정의
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  created_at: string;
+}
 
 ChartJS.register(
   CategoryScale,
@@ -25,14 +34,15 @@ ChartJS.register(
   Filler
 );
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  full_name?: string;
-  role: string;
-  created_at: string;
-}
+// User 인터페이스는 src/types/dashboard.ts로 이동
+// interface User {
+//   id: string;
+//   username: string;
+//   email: string;
+//   full_name?: string;
+//   role: string;
+//   created_at: string;
+// }
 
 // 평가 카테고리별 점수 인터페이스 추가
 interface QuestionCategoryScore {

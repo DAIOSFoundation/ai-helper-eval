@@ -2,12 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../api/dashboard';
 import AdminUserProgress from './AdminUserProgress'; // AdminUserProgress 임포트
 
+// 타입 정의를 인라인으로 이동
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  created_at: string;
+}
+
 interface OverallProgressSummary {
   total_users_count: number;
   started_test_users_count: number;
   completed_test_users_count: number;
   avg_overall_progress_percentage: number;
 }
+
+// OverallProgressSummary 인터페이스는 src/types/dashboard.ts로 이동되었으므로 여기서는 삭제합니다.
+// interface OverallProgressSummary {
+//   total_users_count: number;
+//   started_test_users_count: number;
+//   completed_test_users_count: number;
+//   avg_overall_progress_percentage: number;
+// }
 
 interface DashboardStatsType {
   overall_stats: {
@@ -39,14 +57,15 @@ interface DashboardStatsType {
   overall_progress_summary?: OverallProgressSummary; // 추가: 전체 사용자 진행률 요약
 }
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  full_name?: string;
-  role: string;
-  created_at: string;
-}
+// User 인터페이스는 src/types/dashboard.ts로 이동
+// interface User {
+//   id: string;
+//   username: string;
+//   email: string;
+//   full_name?: string;
+//   role: string;
+//   created_at: string;
+// }
 
 interface DashboardStatsProps {
   user: User;
@@ -219,7 +238,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ user, onViewDetailedRep
                 <div className="flex items-center space-x-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200 shadow-sm">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354c.334-.334.648-.659.932-.943C12.544 2.85 13.06 2 14 2c1.7 0 3 1.3 3 3 0 .736-.299 1.455-.832 2.057l-4.168 4.168-4.168-4.168C5.299 6.455 5 5.736 5 5c0-1.7 1.3-3 3-3 .94 0 1.456.85 2.068 1.411.284.284.598.609.932.943z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12l-1.414 1.414-2.828-2.828L12 7.757l4.243 4.243-2.828 2.828L12 12z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"></path></svg>
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -234,7 +253,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ user, onViewDetailedRep
                 <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200 shadow-sm">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7h.01M15 11h.01M15 15h.01M9 7h.01M9 11h.01M9 15h.01"></path></svg>
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -264,7 +283,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ user, onViewDetailedRep
                 <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg border border-orange-200 shadow-sm">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.001 0 0120.488 9z"></path></svg>
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -282,7 +301,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ user, onViewDetailedRep
 
       {/* 관리자용 전체 사용자 진행률 섹션 */}
       {user.role === 'admin' && (
-        <AdminUserProgress currentUser={user} onViewUserStats={onViewUserStats} />
+        <AdminUserProgress 
+          currentUser={user} 
+          onViewUserStats={onViewUserStats} 
+          overallProgressSummary={overall_progress_summary} // 추가: overall_progress_summary prop 전달
+        />
       )}
 
       {/* 테스트 타입별 통계 */}

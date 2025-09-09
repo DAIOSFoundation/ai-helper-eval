@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../api/dashboard';
-import { OverallProgressSummary, User } from '../../types/dashboard';
+
+// 타입 정의를 인라인으로 이동
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  created_at: string;
+}
+
+interface OverallProgressSummary {
+  total_users_count: number;
+  started_test_users_count: number;
+  completed_test_users_count: number;
+  avg_overall_progress_percentage: number;
+}
 
 interface TestProgress {
   completed_questions: number;
