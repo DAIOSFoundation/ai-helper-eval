@@ -9,6 +9,7 @@ import json
 import uuid
 from datetime import datetime
 from database import db
+from modules.similarity_scorer import SimilarityScorer
 
 app = Flask(__name__)
 CORS(app)
@@ -18,6 +19,7 @@ app.config['JSON_AS_ASCII'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
 # 전역 변수로 세션 관리
+similarity_scorer = SimilarityScorer()
 sessions = {}
 
 # 트리거 키워드 (진단 테스트 시작 조건)
@@ -115,6 +117,36 @@ class ConversationSession:
                 return True
         return False
     
+    def _get_subcategory_for_question(self, test_type, question_index):
+        """질문 인덱스를 적절한 subcategory로 매핑"""
+        if test_type == 'cdi':
+            subcategories = [
+                'academic_achievement', 'social_interaction', 'sleep_problems', 'adult_interaction',
+                'loneliness', 'depression', 'social_interaction', 'academic_achievement', 'crying',
+                'appetite', 'fatigue', 'academic_achievement', 'academic_achievement', 'friendship',
+                'fatigue', 'crying', 'crying', 'fatigue', 'fatigue', 'fatigue'
+            ]
+        elif test_type == 'rcmas':
+            subcategories = [
+                'anxiety', 'social_anxiety', 'anxiety', 'social_anxiety', 'anxiety',
+                'self_esteem', 'anxiety', 'anxiety', 'social_anxiety', 'anxiety',
+                'anxiety', 'self_esteem', 'anxiety', 'social_anxiety', 'anxiety',
+                'social_anxiety', 'social_anxiety', 'anxiety', 'anxiety', 'anxiety'
+            ]
+        elif test_type == 'bdi':
+            subcategories = [
+                'sleep_pattern', 'sleep_pattern', 'sleep_pattern', 'sleep_pattern', 'sleep_pattern',
+                'sleep_pattern', 'sleep_pattern', 'sleep_pattern', 'sleep_pattern', 'sleep_pattern',
+                'sleep_pattern', 'sleep_pattern', 'sleep_pattern', 'appearance', 'sleep_pattern',
+                'sleep_pattern', 'sleep_pattern', 'weight_change', 'weight_change', 'sleep_pattern'
+            ]
+        else:
+            return 'general'
+        
+        if question_index < len(subcategories):
+            return subcategories[question_index]
+        return 'general'
+    
     def start_test(self, test_type):
         """진단 테스트 시작"""
         self.current_mode = 'test'
@@ -141,14 +173,30 @@ class ConversationSession:
                 self.current_test, str(self.current_question_index), user_message
             )
             
+            # 실제 점수 계산 - 질문 ID를 적절한 subcategory로 매핑
+            subcategory = self._get_subcategory_for_question(self.current_test, self.current_question_index)
+            calculated_score = similarity_scorer.calculate_similarity_score(
+                user_message, self.current_test, subcategory
+            )
+            
+            # 테스트 타입에 따른 그룹과 카테고리 설정
+            test_group_mapping = {
+                'cdi': (1, 'CDI'),
+                'rcmas': (2, 'RCMAS'),
+                'bdi': (3, 'BDI')
+            }
+            question_group, question_category = test_group_mapping.get(self.current_test, (1, 'UNKNOWN'))
+            
             db.save_test_response(
                 session_id=self.db_session_id,
                 question_id=str(self.current_question_index),
                 question_text=question_text,
                 user_response=user_message,
                 detected_intent='answer',
-                calculated_score=0,
-                keywords=json.dumps(keywords, ensure_ascii=False)
+                calculated_score=calculated_score,
+                keywords=json.dumps(keywords, ensure_ascii=False),
+                question_group=question_group,
+                question_category=question_category
             )
         
         # 다음 질문으로 진행
@@ -429,6 +477,16 @@ def get_user_sessions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/all-sessions', methods=['GET'])
+def get_all_sessions():
+    """모든 사용자의 세션 조회 (관리자/전문가용)"""
+    try:
+        limit = int(request.args.get('limit', 100))
+        all_sessions = db.get_all_sessions(limit)
+        return jsonify(all_sessions)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/dashboard/progress/<user_id>', methods=['GET'])
 def get_user_progress(user_id):
     """사용자별 통합 진행률 조회"""
@@ -464,40 +522,36 @@ def get_session_detail(session_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 전문가 피드백 API
-@app.route('/api/expert/feedback', methods=['POST'])
-def submit_expert_feedback():
-    """전문가 피드백 제출"""
+@app.route('/api/dashboard/session/<session_id>/grouped-scores', methods=['GET'])
+def get_session_grouped_scores(session_id):
+    """세션별 그룹 점수 조회"""
+    try:
+        grouped_scores = db.get_session_grouped_scores(session_id)
+        return jsonify(grouped_scores)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 전문가 점수 API
+@app.route('/api/expert/score/<response_id>', methods=['PUT'])
+def update_expert_score(response_id):
+    """전문가 점수 업데이트"""
     data = request.get_json()
     
-    if not data or 'session_id' not in data or 'feedback' not in data:
-        return jsonify({'error': '세션 ID와 피드백이 필요합니다.'}), 400
+    if not data or 'score' not in data:
+        return jsonify({'error': '점수가 필요합니다.'}), 400
     
     try:
-        feedback_id = db.create_expert_feedback(
-            session_id=data['session_id'],
-            expert_name=data.get('expert_name', ''),
-            feedback=data['feedback'],
-            recommendations=data.get('recommendations', ''),
-            severity_level=data.get('severity_level', 'medium')
-        )
+        score = float(data['score'])
+        if score < 0 or score > 5:
+            return jsonify({'error': '점수는 0-5 사이의 값이어야 합니다.'}), 400
         
-        return jsonify({
-            'message': '피드백이 제출되었습니다.',
-            'feedback_id': feedback_id
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/expert/feedback/<feedback_id>', methods=['GET'])
-def get_expert_feedback(feedback_id):
-    """피드백 조회"""
-    try:
-        feedback = db.get_expert_feedback(feedback_id)
-        if feedback:
-            return jsonify(feedback)
+        success = db.update_expert_score(response_id, score)
+        if success:
+            return jsonify({'message': '전문가 점수가 업데이트되었습니다.'})
         else:
-            return jsonify({'error': '피드백을 찾을 수 없습니다.'}), 404
+            return jsonify({'error': '응답을 찾을 수 없습니다.'}), 404
+    except ValueError:
+        return jsonify({'error': '유효하지 않은 점수 형식입니다.'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -515,8 +569,8 @@ if __name__ == '__main__':
     print("  GET /api/dashboard/stats - 대시보드 통계")
     print("  GET /api/dashboard/sessions - 사용자 세션 목록")
     print("  GET /api/dashboard/session/<id> - 세션 상세 정보")
-    print("=== 전문가 피드백 ===")
-    print("  POST /api/expert/feedback - 전문가 피드백 제출")
-    print("  GET /api/expert/feedback/<id> - 피드백 조회")
+    print("  GET /api/dashboard/session/<id>/grouped-scores - 세션 그룹별 점수")
+    print("=== 전문가 점수 ===")
+    print("  PUT /api/expert/score/<response_id> - 전문가 점수 업데이트")
     
     app.run(host='0.0.0.0', port=5001, debug=True)

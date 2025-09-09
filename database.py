@@ -236,7 +236,8 @@ class DatabaseManager:
     
     def save_test_response(self, session_id: str, question_id: str, question_text: str, 
                           user_response: str, detected_intent: str = None, 
-                          calculated_score: float = None, keywords: str = None) -> str:
+                          calculated_score: float = None, keywords: str = None,
+                          question_group: int = None, question_category: str = None) -> str:
         """테스트 응답 저장"""
         response_id = str(uuid.uuid4())
         
@@ -245,10 +246,10 @@ class DatabaseManager:
             cursor.execute("""
                 INSERT INTO test_responses 
                 (id, session_id, question_id, question_text, user_response, 
-                 detected_intent, calculated_score, keywords)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                 detected_intent, calculated_score, keywords, question_group, question_category)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (response_id, session_id, question_id, question_text, user_response,
-                  detected_intent, calculated_score, keywords))
+                  detected_intent, calculated_score, keywords, question_group, question_category))
             conn.commit()
         
         return response_id
@@ -409,9 +410,16 @@ class DatabaseManager:
             """)
             test_type_stats = [dict(row) for row in cursor.fetchall()]
             
-            # 최근 세션들
+            # 최근 세션들 (회차 정보 포함)
             cursor.execute("""
-                SELECT ts.*, u.username, u.full_name
+                SELECT 
+                    ts.*, 
+                    u.username, 
+                    u.full_name,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.user_id, ts.test_type 
+                        ORDER BY ts.started_at ASC
+                    ) as session_round
                 FROM test_sessions ts
                 JOIN users u ON ts.user_id = u.id
                 ORDER BY ts.started_at DESC
@@ -455,9 +463,16 @@ class DatabaseManager:
             """)
             test_type_stats = [dict(row) for row in cursor.fetchall()]
             
-            # 최근 세션들
+            # 최근 세션들 (회차 정보 포함)
             cursor.execute("""
-                SELECT ts.*, u.username, u.full_name
+                SELECT 
+                    ts.*, 
+                    u.username, 
+                    u.full_name,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.user_id, ts.test_type 
+                        ORDER BY ts.started_at ASC
+                    ) as session_round
                 FROM test_sessions ts
                 JOIN users u ON ts.user_id = u.id
                 ORDER BY ts.started_at DESC
@@ -478,11 +493,33 @@ class DatabaseManager:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT * FROM test_sessions
-                WHERE user_id = ?
-                ORDER BY started_at DESC
+                SELECT 
+                    ts.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY ts.user_id, ts.test_type 
+                        ORDER BY ts.started_at ASC
+                    ) as session_round
+                FROM test_sessions ts
+                WHERE ts.user_id = ?
+                ORDER BY ts.started_at DESC
                 LIMIT ?
             """, (user_id, limit))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_all_sessions(self, limit: int = 100) -> List[Dict]:
+        """모든 사용자의 세션 목록 조회 (관리자/전문가용)"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT ts.*, u.username, u.email, u.full_name
+                FROM test_sessions ts
+                JOIN users u ON ts.user_id = u.id
+                ORDER BY ts.started_at DESC
+                LIMIT ?
+            """, (limit,))
             
             return [dict(row) for row in cursor.fetchall()]
     
@@ -637,11 +674,13 @@ class DatabaseManager:
             responses = [dict(row) for row in cursor.fetchall()]
             session_dict['responses'] = responses
             
-            # 전문가 피드백
+            # 전문가 피드백 (response_id를 통해 조인)
             cursor.execute("""
-                SELECT * FROM expert_feedback
-                WHERE session_id = ?
-                ORDER BY created_at DESC
+                SELECT ef.*, tr.session_id
+                FROM expert_feedback ef
+                JOIN test_responses tr ON ef.response_id = tr.id
+                WHERE tr.session_id = ?
+                ORDER BY ef.created_at DESC
             """, (session_id,))
             
             feedback = [dict(row) for row in cursor.fetchall()]
@@ -686,6 +725,69 @@ class DatabaseManager:
             
             result = cursor.fetchone()
             return dict(result) if result else None
+    
+    def update_expert_score(self, response_id: str, score: float) -> bool:
+        """전문가 점수 업데이트"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 응답이 존재하는지 확인
+            cursor.execute("SELECT id FROM test_responses WHERE id = ?", (response_id,))
+            if not cursor.fetchone():
+                return False
+            
+            # 전문가 점수 업데이트
+            cursor.execute("""
+                UPDATE test_responses 
+                SET expert_score = ? 
+                WHERE id = ?
+            """, (score, response_id))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def get_session_grouped_scores(self, session_id: str) -> Dict:
+        """세션별 그룹 점수 조회"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            # 그룹별 점수 통계
+            cursor.execute("""
+                SELECT 
+                    question_group,
+                    question_category,
+                    COUNT(*) as question_count,
+                    AVG(calculated_score) as avg_ai_score,
+                    AVG(expert_score) as avg_expert_score,
+                    SUM(calculated_score) as total_ai_score,
+                    SUM(expert_score) as total_expert_score
+                FROM test_responses 
+                WHERE session_id = ?
+                GROUP BY question_group, question_category
+                ORDER BY question_group
+            """, (session_id,))
+            
+            grouped_scores = [dict(row) for row in cursor.fetchall()]
+            
+            # 전체 점수
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_questions,
+                    AVG(calculated_score) as overall_avg_ai_score,
+                    AVG(expert_score) as overall_avg_expert_score,
+                    SUM(calculated_score) as overall_total_ai_score,
+                    SUM(expert_score) as overall_total_expert_score
+                FROM test_responses 
+                WHERE session_id = ?
+            """, (session_id,))
+            
+            overall_stats = dict(cursor.fetchone())
+            
+            return {
+                'grouped_scores': grouped_scores,
+                'overall_stats': overall_stats
+            }
     
     def close(self):
         """데이터베이스 연결 종료"""
