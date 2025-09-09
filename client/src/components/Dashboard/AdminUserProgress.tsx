@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../api/dashboard';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  full_name?: string;
-  role: string;
-  created_at: string;
-}
+import { OverallProgressSummary, User } from '../../types/dashboard';
 
 interface TestProgress {
   completed_questions: number;
@@ -34,9 +26,10 @@ interface UserWithProgress extends User {
 interface AdminUserProgressProps {
   currentUser: User;
   onViewUserStats: (user: User) => void; // 추가: 특정 사용자의 통계를 보기 위한 콜백
+  overallProgressSummary?: OverallProgressSummary; // 추가: 전체 진행률 요약 정보를 받기 위한 prop
 }
 
-const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onViewUserStats }) => {
+const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onViewUserStats, overallProgressSummary }) => {
   const [users, setUsers] = useState<UserWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -145,6 +138,29 @@ const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onVi
           </div>
         </div>
       </div>
+
+      {/* 추가: 전체 사용자 평균 진행률 프로그레스 바 */}
+      {overallProgressSummary && (
+        <div className="p-6 border-b border-gray-200 bg-white">
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">전체 사용자 평균 진행률</span>
+              <span className="text-sm text-gray-500">
+                {overallProgressSummary.avg_overall_progress_percentage.toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div
+                className={`h-3 rounded-full transition-all duration-300 ${getProgressColorClass(overallProgressSummary.avg_overall_progress_percentage)}`}
+                style={{
+                  width: `${Math.min(overallProgressSummary.avg_overall_progress_percentage, 100)}%`
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 내용 부분 */}
       <div className="px-6 py-6">
         {users.length === 0 ? (
