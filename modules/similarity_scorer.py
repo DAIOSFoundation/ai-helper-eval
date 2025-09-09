@@ -42,6 +42,36 @@ class SimilarityScorer:
                     'positive': ['친구가 많다', '사람들과 잘 지낸다', '인기가 있다', '좋다'],
                     'moderate': ['친구가 조금 있다', '보통이다', '적당하다'],
                     'negative': ['친구가 없다', '외롭다', '사람들과 어렵다', '고립감']
+                },
+                'social_interaction': {
+                    'positive': ['잘 지낸다', '편하다', '재미있다', '좋다'],
+                    'moderate': ['보통이다', '그럭저럭이다', '가끔 어렵다'],
+                    'negative': ['어렵다', '힘들다', '불편하다', '싫다']
+                },
+                'adult_interaction': {
+                    'positive': ['편하다', '좋다', '괜찮다', '이해해준다'],
+                    'moderate': ['보통이다', '그럭저럭이다', '가끔 어렵다'],
+                    'negative': ['어렵다', '힘들다', '무서워', '싫다']
+                },
+                'loneliness': {
+                    'positive': ['외롭지 않다', '괜찮다', '편하다', '좋다'],
+                    'moderate': ['가끔 외롭다', '보통이다', '그럭저럭이다'],
+                    'negative': ['매우 외롭다', '항상 외롭다', '고독하다', '쓸쓸하다']
+                },
+                'depression': {
+                    'positive': ['우울하지 않다', '기분 좋다', '괜찮다', '밝다'],
+                    'moderate': ['가끔 우울하다', '보통이다', '그럭저럭이다'],
+                    'negative': ['매우 우울하다', '항상 슬프다', '절망적이다', '어둡다']
+                },
+                'concentration': {
+                    'positive': ['잘 집중한다', '문제없다', '좋다', '괜찮다'],
+                    'moderate': ['가끔 어렵다', '보통이다', '그럭저럭이다'],
+                    'negative': ['전혀 집중 못한다', '매우 어렵다', '산만하다', '힘들다']
+                },
+                'appetite': {
+                    'positive': ['잘 먹는다', '맛있다', '좋다', '괜찮다'],
+                    'moderate': ['보통이다', '그럭저럭이다', '가끔 안 먹는다'],
+                    'negative': ['전혀 안 먹는다', '맛없다', '싫다', '토할 것 같다']
                 }
             },
             'rcmas': {
@@ -60,6 +90,31 @@ class SimilarityScorer:
                 'social_anxiety': {
                     'positive': ['편안하다', '자연스럽다', '괜찮다', '문제없다', '편하다'],
                     'negative': ['불안하다', '긴장된다', '신경쓰인다', '부담스럽다', '어색하다', '두렵다', '무서워한다', '걱정된다']
+                },
+                'self_esteem': {
+                    'positive': ['자신있다', '잘한다', '괜찮다', '좋다', '만족한다'],
+                    'moderate': ['보통이다', '그럭저럭이다', '가끔 자신없다'],
+                    'negative': ['자신없다', '못한다', '부족하다', '열등감', '비교된다']
+                },
+                'worry': {
+                    'positive': ['걱정없다', '평온하다', '괜찮다', '안정적이다'],
+                    'moderate': ['가끔 걱정된다', '보통이다', '그럭저럭이다'],
+                    'negative': ['걱정이 많다', '불안하다', '초조하다', '스트레스받는다']
+                },
+                'family_relationship': {
+                    'positive': ['잘 지낸다', '편하다', '좋다', '괜찮다', '사랑한다'],
+                    'moderate': ['보통이다', '그럭저럭이다', '가끔 어렵다'],
+                    'negative': ['어렵다', '힘들다', '싫다', '갈등', '불편하다']
+                },
+                'stress': {
+                    'positive': ['스트레스없다', '편안하다', '괜찮다', '여유있다'],
+                    'moderate': ['가끔 스트레스받는다', '보통이다', '그럭저럭이다'],
+                    'negative': ['스트레스가 많다', '힘들다', '압박받는다', '부담된다']
+                },
+                'mood_swings': {
+                    'positive': ['기분이 안정적이다', '괜찮다', '편안하다', '일정하다'],
+                    'moderate': ['가끔 변한다', '보통이다', '그럭저럭이다'],
+                    'negative': ['기분이 자주 변한다', '갑자기 화난다', '불안정하다', '예측불가능하다']
                 }
             },
             'bdi': {
@@ -145,16 +200,12 @@ class SimilarityScorer:
         return normalized
     
     def analyze_user_intent(self, user_response, system_question=None):
-        """사용자 의도 분석 (시스템 질문 맥락 포함)"""
-        # 먼저 간단한 규칙 기반 분류
-        intent = self._rule_based_intent_classification(user_response)
-        
-        # 규칙으로 분류되지 않으면 Ollama 사용
-        if intent == 'unknown':
-            try:
-                # 시스템 질문이 있으면 맥락을 포함한 프롬프트 생성
-                if system_question:
-                    prompt = f"""
+        """사용자 의도 분석 (Ollama 기반)"""
+        # 항상 Ollama 사용
+        try:
+            # 시스템 질문이 있으면 맥락을 포함한 프롬프트 생성
+            if system_question:
+                prompt = f"""
 다음 대화를 분석하여 사용자의 의도를 파악해주세요.
 
 시스템 질문: "{system_question}"
@@ -169,8 +220,8 @@ class SimilarityScorer:
 
 답변은 반드시 위의 키워드 중 하나만 출력해주세요.
 """
-                else:
-                    prompt = f"""
+            else:
+                prompt = f"""
 사용자의 응답을 분석하여 의도를 파악해주세요.
 
 사용자 응답: "{user_response}"
@@ -184,102 +235,45 @@ class SimilarityScorer:
 
 답변은 반드시 위의 키워드 중 하나만 출력해주세요.
 """
-                
-                response = ollama.chat(
-                    model=self.model_name,
-                    messages=[
-                        {
-                            'role': 'system',
-                            'content': '당신은 사용자의 의도를 분석하는 전문가입니다. 주어진 응답을 분석하여 적절한 의도를 분류해주세요.'
-                        },
-                        {
-                            'role': 'user',
-                            'content': prompt
-                        }
-                    ],
-                    options={
-                        'temperature': 0.1,
-                        'top_p': 0.9
+            
+            response = ollama.chat(
+                model=self.model_name,
+                messages=[
+                    {
+                        'role': 'system',
+                        'content': '당신은 사용자의 의도를 분석하는 전문가입니다. 주어진 응답을 분석하여 적절한 의도를 분류해주세요.'
+                    },
+                    {
+                        'role': 'user',
+                        'content': prompt
                     }
-                )
+                ],
+                options={
+                    'temperature': 0.1,
+                    'top_p': 0.9
+                }
+            )
+            
+            intent = response['message']['content'].strip().lower()
+            
+            # 의도 분류 (더 정확한 파싱)
+            if any(keyword in intent for keyword in ['ready', '준비', '시작']):
+                return 'ready'
+            elif any(keyword in intent for keyword in ['answer', '답변', '응답']):
+                return 'answer'
+            elif any(keyword in intent for keyword in ['greeting', '인사', '안녕']):
+                return 'greeting'
+            elif any(keyword in intent for keyword in ['confused', '혼란', '모르겠']):
+                return 'confused'
+            elif any(keyword in intent for keyword in ['refuse', '거부', '싫어']):
+                return 'refuse'
+            else:
+                # 기본값: 답변으로 간주
+                return 'answer'
                 
-                intent = response['message']['content'].strip().lower()
-                
-                # 의도 분류 (더 정확한 파싱)
-                if any(keyword in intent for keyword in ['ready', '준비', '시작']):
-                    return 'ready'
-                elif any(keyword in intent for keyword in ['answer', '답변', '응답']):
-                    return 'answer'
-                elif any(keyword in intent for keyword in ['greeting', '인사', '안녕']):
-                    return 'greeting'
-                elif any(keyword in intent for keyword in ['confused', '혼란', '모르겠']):
-                    return 'confused'
-                elif any(keyword in intent for keyword in ['refuse', '거부', '싫어']):
-                    return 'refuse'
-                else:
-                    # 기본값: 답변으로 간주
-                    return 'answer'
-                    
-            except Exception as e:
-                print(f"Ollama 의도 분석 오류: {e}")
-                return 'answer'  # 기본값
-        
-        return intent
-    
-    def _rule_based_intent_classification(self, user_response):
-        """규칙 기반 의도 분류"""
-        response = user_response.lower().strip()
-        
-        # 인사말 패턴
-        greeting_patterns = [
-            '안녕', '안녕하세요', '반갑습니다', '반가워', '하이', 'hi', 'hello'
-        ]
-        if any(pattern in response for pattern in greeting_patterns):
-            return 'greeting'
-        
-        # 준비 의도 패턴 (더 구체적으로)
-        ready_patterns = [
-            '시작', '준비', '네', '예', '오키', 'ok', '시작해줘', '물어보세요',
-            '질문해줘', '시작할 준비', '알겠어', '알았어', '응', '그래'
-        ]
-        if any(pattern in response for pattern in ready_patterns):
-            return 'ready'
-        
-        # 거부 의도 패턴
-        refuse_patterns = [
-            '싫어', '안할래', '그만', '중단', '종료', 'exit', 'quit', 'stop'
-        ]
-        if any(pattern in response for pattern in refuse_patterns):
-            return 'refuse'
-        
-        # 혼란 의도 패턴
-        confused_patterns = [
-            '모르겠어', '이해가 안돼', '뭐라고', '뭔소리', '잘 모르겠', '어려워'
-        ]
-        if any(pattern in response for pattern in confused_patterns):
-            return 'confused'
-        
-        # 답변 의도 패턴 (감정/상태 표현) - 더 포괄적으로
-        answer_patterns = [
-            '좋아', '괜찮아', '어려워', '힘들어', '쉬워', '재미있어', '지겨워',
-            '피곤해', '우울해', '기뻐', '슬퍼', '화나', '짜증나', '걱정돼',
-            '걱정', '불안', '초조', '긴장', '편안', '안정', '행복', '기쁨',
-            '잘', '못', '안', '안돼', '안해', '잘못', '잘해', '잘돼',
-            '공부', '학교', '친구', '잠', '수면', '외로', '외롭', '외로워',
-            '힘들', '어렵', '쉬운', '재미', '지겨', '피곤', '우울', '기쁜',
-            '슬픈', '화난', '짜증', '걱정', '불안', '초조', '긴장', '편안',
-            '안정', '행복', '기쁨', '좋은', '나쁜', '괜찮은', '어려운', '쉬운',
-            '깨', '깬', '깨어', '아침', '밤', '밤에', '자다', '잠들', '잠들어'
-        ]
-        if any(pattern in response for pattern in answer_patterns):
-            return 'answer'
-        
-        # 숫자나 선택지 패턴 (기존 훈련 데이터 패턴)
-        if any(char.isdigit() for char in response) or '번' in response:
-            return 'answer'
-        
-        # 기본값: 알 수 없음 (Ollama로 분류)
-        return 'unknown'
+        except Exception as e:
+            print(f"Ollama 의도 분석 오류: {e}")
+            return 'answer'  # 기본값
     
     def _preprocess_text(self, text):
         """텍스트 전처리"""

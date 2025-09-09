@@ -200,10 +200,21 @@ class RNN_GRU_net(nn.Module):
     def restore(self):
         """모델 복원"""
         if os.path.exists(self.checkpoint_path):
-            checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
-            self.load_state_dict(checkpoint['model_state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            print(f"모델이 {self.checkpoint_path}에서 복원되었습니다.")
+            try:
+                checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+                self.load_state_dict(checkpoint['model_state_dict'])
+                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                print(f"모델이 {self.checkpoint_path}에서 복원되었습니다.")
+            except RuntimeError as e:
+                if "size mismatch" in str(e):
+                    print(f"모델 크기가 맞지 않습니다. 새로운 모델을 사용합니다. (기존 체크포인트: {self.checkpoint_path})")
+                    # 기존 체크포인트를 백업하고 삭제
+                    import shutil
+                    backup_path = f"{self.checkpoint_path}.backup"
+                    shutil.move(self.checkpoint_path, backup_path)
+                    print(f"기존 체크포인트를 {backup_path}로 백업했습니다.")
+                else:
+                    raise e
         else:
             print("저장된 모델이 없습니다. 새로운 모델을 사용합니다.")
     

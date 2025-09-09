@@ -154,15 +154,6 @@ class ConversationSession:
         # 다음 질문으로 진행
         self.current_question_index += 1
         
-        # 진행률 업데이트
-        if self.db_session_id:
-            db.update_test_session(
-                self.db_session_id,
-                status='in_progress',
-                completed_questions=self.current_question_index,
-                total_score=self.current_question_index
-            )
-        
         if self.current_question_index < len(TEST_QUESTIONS[self.current_test]):
             return TEST_QUESTIONS[self.current_test][self.current_question_index], False
         else:
@@ -221,7 +212,7 @@ def get_chat_response(user_message, conversation_history):
         })
         
         response = ollama.chat(
-            model='gemma2:2b',
+            model='gemma2:27b',
             messages=messages,
             options={
                 'temperature': 0.7,
@@ -358,148 +349,6 @@ def health_check():
         'status': 'healthy',
         'active_sessions': len(sessions)
     })
-
-# 사용자 인증 API
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    """사용자 회원가입"""
-    data = request.get_json()
-    
-    if not data or 'username' not in data or 'email' not in data or 'password' not in data:
-        return jsonify({'error': '사용자명, 이메일, 비밀번호가 필요합니다.'}), 400
-    
-    try:
-        user_id = db.create_user(
-            username=data['username'],
-            email=data['email'],
-            password=data['password'],
-            full_name=data.get('full_name', ''),
-            role='user'
-        )
-        
-        return jsonify({
-            'message': '회원가입이 완료되었습니다.',
-            'user_id': user_id
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    """사용자 로그인"""
-    data = request.get_json()
-    
-    if not data or 'email' not in data or 'password' not in data:
-        return jsonify({'error': '이메일과 비밀번호가 필요합니다.'}), 400
-    
-    try:
-        user = db.authenticate_user(data['email'], data['password'])
-        if user:
-            return jsonify({
-                'message': '로그인 성공',
-                'user': user
-            })
-        else:
-            return jsonify({'error': '이메일 또는 비밀번호가 올바르지 않습니다.'}), 401
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-# 대시보드 API
-@app.route('/api/dashboard/stats', methods=['GET'])
-def get_dashboard_stats():
-    """대시보드 통계"""
-    try:
-        stats = db.get_dashboard_stats()
-        return jsonify(stats)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/dashboard/sessions', methods=['GET'])
-def get_user_sessions():
-    """사용자 세션 목록"""
-    user_id = request.args.get('user_id')
-    limit = int(request.args.get('limit', 50))
-    
-    if not user_id:
-        return jsonify({'error': '사용자 ID가 필요합니다.'}), 400
-    
-    try:
-        sessions_data = db.get_user_sessions(user_id, limit)
-        return jsonify(sessions_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/dashboard/progress/<user_id>', methods=['GET'])
-def get_user_progress(user_id):
-    """사용자별 통합 진행률 조회"""
-    try:
-        progress_data = db.get_user_progress_summary(user_id)
-        return jsonify(progress_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/admin/all-users-progress', methods=['GET'])
-def get_all_users_progress():
-    """모든 사용자의 진행률 조회 (관리자용)"""
-    try:
-        # 관리자 권한 확인 (실제로는 JWT 토큰이나 세션에서 확인해야 함)
-        # 여기서는 간단히 구현
-        users_progress = db.get_all_users_progress()
-        return jsonify({
-            'users': users_progress,
-            'total_users': len(users_progress)
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/dashboard/session/<session_id>', methods=['GET'])
-def get_session_detail(session_id):
-    """세션 상세 정보"""
-    try:
-        session_data = db.get_session_detail(session_id)
-        if session_data:
-            return jsonify(session_data)
-        else:
-            return jsonify({'error': '세션을 찾을 수 없습니다.'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# 전문가 피드백 API
-@app.route('/api/expert/feedback', methods=['POST'])
-def submit_expert_feedback():
-    """전문가 피드백 제출"""
-    data = request.get_json()
-    
-    if not data or 'session_id' not in data or 'feedback' not in data:
-        return jsonify({'error': '세션 ID와 피드백이 필요합니다.'}), 400
-    
-    try:
-        feedback_id = db.create_expert_feedback(
-            session_id=data['session_id'],
-            expert_name=data.get('expert_name', ''),
-            feedback=data['feedback'],
-            recommendations=data.get('recommendations', ''),
-            severity_level=data.get('severity_level', 'medium')
-        )
-        
-        return jsonify({
-            'message': '피드백이 제출되었습니다.',
-            'feedback_id': feedback_id
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/api/expert/feedback/<feedback_id>', methods=['GET'])
-def get_expert_feedback(feedback_id):
-    """피드백 조회"""
-    try:
-        feedback = db.get_expert_feedback(feedback_id)
-        if feedback:
-            return jsonify(feedback)
-        else:
-            return jsonify({'error': '피드백을 찾을 수 없습니다.'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Flask API 서버를 시작합니다...")
