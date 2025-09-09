@@ -186,17 +186,35 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
                       {getTestTypeLabel(session.test_type)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ 
+                          flex: 1, 
+                          backgroundColor: '#e5e7eb', 
+                          borderRadius: '9999px', 
+                          height: '16px', 
+                          minWidth: '80px',
+                          overflow: 'hidden'
+                        }}>
                           <div
-                            className="bg-indigo-600 h-2 rounded-full"
                             style={{
-                              width: `${Math.min((session.completed_questions / session.total_questions) * 100, 100)}%`
+                              backgroundColor: '#4f46e5',
+                              height: '16px',
+                              borderRadius: '9999px',
+                              transition: 'width 0.3s ease',
+                              width: `${Math.min(
+                                ((session.completed_questions || 0) / (session.total_questions || 1)) * 100,
+                                100
+                              )}%`
                             }}
                           ></div>
                         </div>
-                        <span className="text-xs">
-                          {Math.min(session.completed_questions, session.total_questions)}/{session.total_questions}
+                        <span style={{ 
+                          fontSize: '14px', 
+                          fontWeight: '500', 
+                          color: '#374151',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {session.completed_questions || 0}/{session.total_questions || 0}
                         </span>
                       </div>
                     </td>
