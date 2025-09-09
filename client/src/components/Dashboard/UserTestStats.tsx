@@ -34,6 +34,12 @@ interface User {
   created_at: string;
 }
 
+// 평가 카테고리별 점수 인터페이스 추가
+interface QuestionCategoryScore {
+  question_category: string;
+  avg_ai_score: number;
+}
+
 interface TestSession {
   id: string;
   test_type: string;
@@ -44,6 +50,7 @@ interface TestSession {
   started_at: string;
   completed_at?: string;
   session_round: number;
+  question_category_scores?: QuestionCategoryScore[]; // 추가: 평가 카테고리별 점수
 }
 
 interface UserTestStatsProps {
@@ -73,22 +80,12 @@ const UserTestStats: React.FC<UserTestStatsProps> = ({ user, onBack }) => {
     }
   };
 
-  // 기존 getTestTypeLabel 함수 제거 (유틸리티 사용)
-  // const getTestTypeLabel = (testType: string) => {
-  //   switch (testType.toLowerCase()) {
-  //     case 'cdi': return 'CDI (아동 우울 척도)';
-  //     case 'rcmas': return 'RCMAS (아동 불안 척도)';
-  //     case 'bdi': return 'BDI (벡 우울 척도)';
-  //     default: return testType.toUpperCase();
-  //   }
-  // };
-
+  // 점수가 높을수록 붉은색, 낮을수록 파란색으로 변경 (DetailedReport.tsx와 통일)
   const getScoreColor = (score: number) => {
-    if (score >= 4.0) return 'text-green-600';
-    if (score >= 3.0) return 'text-lime-600';
-    if (score >= 2.0) return 'text-yellow-600';
-    if (score >= 1.0) return 'text-orange-600';
-    return 'text-red-600';
+    if (score >= 4.0) return 'text-green-600 font-bold'; // 높은 점수
+    if (score >= 3.0) return 'text-yellow-600 font-semibold';
+    if (score >= 2.0) return 'text-orange-600';
+    return 'text-red-600'; // 낮은 점수
   };
 
   // 테스트 타입별로 그룹화
@@ -101,8 +98,9 @@ const UserTestStats: React.FC<UserTestStatsProps> = ({ user, onBack }) => {
   }, {} as { [key: string]: TestSession[] });
 
   // 각 테스트 타입별로 회차순으로 정렬
+  // 최신 회차부터 표시되도록 내림차순으로 변경
   Object.keys(groupedSessions).forEach(testType => {
-    groupedSessions[testType].sort((a, b) => a.session_round - b.session_round);
+    groupedSessions[testType].sort((a, b) => b.session_round - a.session_round); // 최신 회차부터 표시
   });
 
   if (loading) {
@@ -199,7 +197,8 @@ const UserTestStats: React.FC<UserTestStatsProps> = ({ user, onBack }) => {
                   <div className="h-80">
                     <Line
                       data={{
-                        labels: testSessions.map(session => 
+                        // 그래프 라벨은 오름차순으로 유지하기 위해 정렬된 세션의 복사본을 만들어 사용
+                        labels: [...testSessions].sort((a, b) => a.session_round - b.session_round).map(session => 
                           `${session.session_round}회차\n${new Date(session.completed_at || session.started_at).toLocaleDateString('ko-KR', {
                             month: 'short',
                             day: 'numeric'
@@ -208,7 +207,8 @@ const UserTestStats: React.FC<UserTestStatsProps> = ({ user, onBack }) => {
                         datasets: [
                           {
                             label: '점수',
-                            data: testSessions.map(session => session.total_score),
+                            // 데이터 역시 오름차순으로 유지하기 위해 정렬된 세션의 복사본을 만들어 사용
+                            data: [...testSessions].sort((a, b) => a.session_round - b.session_round).map(session => session.total_score),
                             borderColor: '#4f46e5', // indigo-600
                             backgroundColor: 'rgba(79, 70, 229, 0.1)', // indigo-600 with 0.1 opacity
                             borderWidth: 3,
@@ -305,40 +305,55 @@ const UserTestStats: React.FC<UserTestStatsProps> = ({ user, onBack }) => {
               </div>
 
               {/* 회차별 상세 정보 */}
-              <div className="space-y-3">
+              <div className="space-y-2"> {/* 간격을 6에서 2로 줄임 */}
                 <h4 className="text-lg font-semibold text-gray-700">회차별 상세 정보</h4>
                 {testSessions.map((session) => (
-                  <div key={session.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-4">
+                  <div key={session.id} className="bg-white rounded-lg p-3 border border-gray-200 shadow-sm"> {/* 패딩을 6에서 3으로 줄임 */}
+                    <div className="mb-2 pb-2 border-b border-gray-100 flex justify-between items-center"> {/* 마진과 패딩을 4에서 2로 줄임 */}
+                      <div className="flex items-center space-x-3"> {/* 간격을 4에서 3으로 줄임 */}
                         <div className="text-center">
-                          <div className="text-lg font-bold text-indigo-600">{session.session_round}회차</div>
+                          <div className="text-lg font-bold text-indigo-600">{session.session_round}회차</div> {/* 폰트 크기를 xl에서 lg로 줄임 */}
                           <div className="text-xs text-gray-500">회차</div>
                         </div>
                         <div className="text-center">
-                          <div className={`text-2xl font-bold ${getScoreColor(session.total_score)}`}>
+                          <div className={`text-2xl font-bold ${getScoreColor(session.total_score)}`}> {/* 폰트 크기를 3xl에서 2xl로 줄임 */}
                             {session.total_score.toFixed(1)}
                           </div>
-                          <div className="text-xs text-gray-500">점수</div>
+                          <div className="text-xs text-gray-500">총점</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">
+                          <div className="text-lg font-bold text-green-600"> {/* 폰트 크기를 xl에서 lg로 줄임 */}
                             {session.completed_questions}/{session.total_questions}
                           </div>
                           <div className="text-xs text-gray-500">완료율</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-600">
-                          시작: {new Date(session.started_at).toLocaleString('ko-KR')}
-                        </div>
+                      <div className="text-right text-xs text-gray-600"> {/* 폰트 크기를 sm에서 xs로 줄임 */}
+                        <div>시작: {new Date(session.started_at).toLocaleString('ko-KR')}</div>
                         {session.completed_at && (
-                          <div className="text-sm text-gray-600">
-                            완료: {new Date(session.completed_at).toLocaleString('ko-KR')}
-                          </div>
+                          <div>완료: {new Date(session.completed_at).toLocaleString('ko-KR')}</div>
                         )}
                       </div>
                     </div>
+
+                    {/* 평가 카테고리별 점수 섹션 */}
+                    {session.question_category_scores && session.question_category_scores.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-100"> {/* 마진과 패딩을 4에서 2로 줄임 */}
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">평가 카테고리별 점수</h5> {/* 폰트 크기를 base에서 sm으로, 마진을 3에서 2로 줄임 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"> {/* 간격을 3에서 2로 줄임 */}
+                          {session.question_category_scores.map((categoryScore, catIndex) => (
+                            <div key={catIndex} className="bg-gray-50 rounded-lg p-2 border border-gray-200"> {/* 패딩을 3에서 2로 줄임 */}
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-gray-700">{categoryScore.question_category}</span> {/* 폰트 크기를 sm에서 xs로 줄임 */}
+                                <span className={`text-sm font-bold ${getScoreColor(categoryScore.avg_ai_score)}`}> {/* 폰트 크기를 lg에서 sm으로 줄임 */}
+                                  {categoryScore.avg_ai_score.toFixed(1)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
