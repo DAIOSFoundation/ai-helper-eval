@@ -32,8 +32,9 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (feedbackScore < 0 || feedbackScore > 10) {
-      setError('점수는 0-10 사이의 값이어야 합니다.');
+    // 점수 범위 조정: 0-5로 변경 (DetailedReport의 ExpertScoreInput과 통일)
+    if (feedbackScore < 0 || feedbackScore > 5) {
+      setError('점수는 0-5 사이의 값이어야 합니다.');
       return;
     }
 
@@ -41,13 +42,15 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
     setError('');
 
     try {
-      await dashboardAPI.submitExpertFeedback({
-        response_id: responseId,
-        expert_id: expert.id,
-        feedback_score: feedbackScore,
-        feedback_comment: feedbackComment || undefined,
-        keywords_suggested: keywordsSuggested || undefined
-      });
+      // API 호출은 updateExpertScore를 사용하고, comment/keywords는 현재 백엔드에 없으므로 제외
+      await dashboardAPI.updateExpertScore(responseId, feedbackScore);
+      // await dashboardAPI.submitExpertFeedback({ // 현재 백엔드 API에 없음
+      //   response_id: responseId,
+      //   expert_id: expert.id,
+      //   feedback_score: feedbackScore,
+      //   feedback_comment: feedbackComment || undefined,
+      //   keywords_suggested: keywordsSuggested || undefined
+      // });
 
       onFeedbackSubmitted();
       onClose();
@@ -60,69 +63,69 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-xl">
         {/* 헤더 */}
-        <div className="bg-green-600 text-white px-6 py-4 flex justify-between items-center">
+        <div className="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold">전문가 피드백</h2>
           <button
             onClick={onClose}
-            className="text-green-100 hover:text-white text-2xl"
+            className="text-indigo-100 hover:text-white text-2xl"
           >
             ×
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 custom-scrollbar overflow-y-auto">
           {/* 점수 입력 */}
           <div>
             <label htmlFor="feedbackScore" className="block text-sm font-medium text-gray-700 mb-2">
-              평가 점수 (0-10)
+              평가 점수 (0-5)
             </label>
             <div className="flex items-center space-x-4">
               <input
                 type="number"
                 id="feedbackScore"
                 min="0"
-                max="10"
+                max="5" // 0-5로 변경
                 step="0.1"
                 value={feedbackScore}
                 onChange={(e) => setFeedbackScore(parseFloat(e.target.value) || 0)}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
               />
               <div className="flex-1">
                 <input
                   type="range"
                   min="0"
-                  max="10"
+                  max="5" // 0-5로 변경
                   step="0.1"
                   value={feedbackScore}
                   onChange={(e) => setFeedbackScore(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-indigo-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:bg-indigo-600 [&::-moz-range-thumb]:bg-indigo-600"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>0 (낮음)</span>
-                  <span>5 (보통)</span>
-                  <span>10 (높음)</span>
+                  <span>2.5 (보통)</span>
+                  <span>5 (높음)</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* 점수 해석 */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-2">점수 해석</h4>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h4 className="font-medium text-gray-900 mb-2">점수 해석 (0-5점 척도)</h4>
             <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>0-2:</strong> 매우 낮은 수준 (정상 범위)</p>
-              <p><strong>3-4:</strong> 낮은 수준 (경미한 증상)</p>
-              <p><strong>5-6:</strong> 중간 수준 (중간 정도 증상)</p>
-              <p><strong>7-8:</strong> 높은 수준 (심각한 증상)</p>
-              <p><strong>9-10:</strong> 매우 높은 수준 (매우 심각한 증상)</p>
+              <p><strong>0-1:</strong> 매우 낮은 수준</p>
+              <p><strong>1.1-2:</strong> 낮은 수준</p>
+              <p><strong>2.1-3:</strong> 중간 수준</p>
+              <p><strong>3.1-4:</strong> 높은 수준</p>
+              <p><strong>4.1-5:</strong> 매우 높은 수준</p>
             </div>
           </div>
 
-          {/* 피드백 코멘트 */}
-          <div>
+          {/* 피드백 코멘트 (현재 백엔드에서 지원하지 않아 주석 처리) */}
+          {/* <div>
             <label htmlFor="feedbackComment" className="block text-sm font-medium text-gray-700 mb-2">
               피드백 코멘트
             </label>
@@ -131,13 +134,13 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
               value={feedbackComment}
               onChange={(e) => setFeedbackComment(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="응답에 대한 전문가 의견을 입력하세요..."
             />
-          </div>
+          </div> */}
 
-          {/* 제안 키워드 */}
-          <div>
+          {/* 제안 키워드 (현재 백엔드에서 지원하지 않아 주석 처리) */}
+          {/* <div>
             <label htmlFor="keywordsSuggested" className="block text-sm font-medium text-gray-700 mb-2">
               제안 키워드
             </label>
@@ -146,13 +149,13 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
               id="keywordsSuggested"
               value={keywordsSuggested}
               onChange={(e) => setKeywordsSuggested(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="쉼표로 구분하여 키워드를 입력하세요 (예: 우울, 슬픔, 절망)"
             />
             <p className="text-xs text-gray-500 mt-1">
               이 키워드들은 향후 평가 템플릿 개선에 사용됩니다.
             </p>
-          </div>
+          </div> */}
 
           {/* 에러 메시지 */}
           {error && (
@@ -166,14 +169,14 @@ const ExpertFeedbackForm: React.FC<ExpertFeedbackFormProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="btn-unified btn-unified-secondary btn-unified-md"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+              className="btn-unified btn-unified-primary btn-unified-md disabled:opacity-50"
             >
               {loading ? '제출 중...' : '피드백 제출'}
             </button>

@@ -1,69 +1,79 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# AI Helper Admin
 
-Currently, two official plugins are available:
+AI Helper Admin은 사용자들의 AI 대화형 진단 테스트 진행 상황을 관리하고, 테스트 결과를 상세하게 분석하며, AI 모델 및 시스템 설정을 관리하는 웹 애플리케이션입니다. 사용자들은 AI 상담사와 대화하며 심리 진단 테스트(CDI, RCMAS, BDI)를 받을 수 있으며, 관리자와 전문가는 이들의 진행 상황과 결과를 모니터링하고 피드백을 제공할 수 있습니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 주요 기능
 
-## Expanding the ESLint configuration
+*   **사용자 인증:** 안전한 로그인 및 회원가입 기능 (일반 사용자, 전문가, 관리자 역할 구분)
+*   **대화형 AI 테스트:** AI 상담사와 대화하며 심리 진단 테스트(CDI, RCMAS, BDI) 진행
+    *   대화 중 특정 키워드 감지 시 자동 진단 테스트 시작
+    *   각 테스트는 20개 질문으로 구성
+    *   테스트 완료 시 AI 진단 결과 제공
+*   **사용자 대시보드:**
+    *   **사용자 통계:** 개인별 테스트 세션 진행률 및 점수 변화 추이 시각화
+    *   **세션 목록:** 진행 중이거나 완료된 모든 테스트 세션 목록 조회 및 상태 확인
+    *   **상세 진단 리포트:** 개별 테스트 세션의 질문-응답 쌍, AI 분석 점수, 키워드 상세 분석
+*   **전문가/관리자 기능:**
+    *   **전체 사용자 진행률:** 모든 사용자의 테스트 진행 상황 및 통계 개요 확인
+    *   **전문가 점수 입력:** 개별 응답에 대한 전문가의 피드백 점수 및 코멘트 입력 (리포트 개선)
+    *   **AI 모델 관리 (관리자 전용):** AI 모델 버전, 응답 온도, 최대 토큰 수 등 설정 및 성능 모니터링
+*   **설정:** 개인 계정 정보 관리, 알림 설정, 언어 선택 등
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 기술 스택
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+*   **Frontend:** React, TypeScript, Vite
+*   **Styling:** Custom CSS Utility Classes (Tailwind CSS 유사)
+*   **Data Fetching:** `@tanstack/react-query`, Axios
+*   **Charting:** Chart.js (React-Chartjs-2)
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 설치 및 실행 방법
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+프로젝트를 로컬 환경에서 설정하고 실행하는 방법입니다.
+
+### 1. 전제 조건
+
+*   Node.js (LTS 버전 권장)
+*   npm 또는 Yarn
+
+### 2. 프로젝트 클론
+
+```bash
+git clone [프로젝트_레포지토리_URL]
+cd AI-Helper-Admin
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 3. 종속성 설치
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+# 또는
+yarn install
 ```
+
+### 4. 환경 변수 설정
+
+백엔드 API 서버의 URL을 `.env` 파일에 설정해야 합니다.
+프로젝트 루트에 `.env` 파일을 생성하고 다음 내용을 추가하세요:
+
+```
+VITE_API_BASE_URL=http://localhost:5001/api # 백엔드 API 서버 주소에 맞게 변경
+```
+
+### 5. 애플리케이션 실행
+
+개발 모드로 애플리케이션을 실행합니다:
+
+```bash
+npm run dev
+# 또는
+yarn dev
+```
+
+애플리케이션은 일반적으로 `http://localhost:5173`에서 실행됩니다. (Vite 설정에 따라 다를 수 있습니다.)
+
+### 6. 백엔드 서버
+
+이 프론트엔드 애플리케이션은 별도의 백엔드 서버가 필요합니다. 백엔드 서버를 먼저 실행했는지 확인하세요. (백엔드 서버 설정 및 실행 방법은 해당 백엔드 프로젝트의 문서를 참조하세요.)
+
+---

@@ -1,0 +1,6 @@
+[
+  { "id": "home", "label": "홈", "icon": "🏠" },
+  { "id": "conversation", "label": "대화 테스트", "icon": "💬" },
+  { "id": "ai-management", "label": "AI 관리", "icon": "🤖" },
+  { "id": "settings", "label": "설정", "icon": "⚙️" }
+]

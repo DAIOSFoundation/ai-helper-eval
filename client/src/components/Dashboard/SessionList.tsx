@@ -20,18 +20,22 @@ interface TestSession {
   total_score: number;
   started_at: string;
   completed_at?: string;
+  username?: string;
+  email?: string;
+  full_name?: string;
 }
 import DetailedReport from '../Reporting/DetailedReport';
 
 interface SessionListProps {
   user: User;
+  onViewDetailedReport?: (sessionId: string) => void; // App.tsx에서 전달받기 위함
 }
 
-const SessionList: React.FC<SessionListProps> = ({ user }) => {
+const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport }) => {
   const [sessions, setSessions] = useState<TestSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  // const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null); // App.tsx에서 관리
 
   useEffect(() => {
     loadSessions();
@@ -40,9 +44,22 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const sessions = await dashboardAPI.getUserSessions(user.id);
+      console.log('Loading sessions for user:', user.id, 'role:', user.role);
+      
+      let sessions;
+      if (user.role === 'admin' || user.role === 'expert') {
+        // 관리자와 전문가는 모든 사용자의 세션을 볼 수 있음
+        sessions = await dashboardAPI.getAllSessions();
+        console.log('All sessions loaded:', sessions);
+      } else {
+        // 일반 사용자는 자신의 세션만 볼 수 있음
+        sessions = await dashboardAPI.getUserSessions(user.id);
+        console.log('User sessions loaded:', sessions);
+      }
+      
       setSessions(sessions);
     } catch (err: any) {
+      console.error('Error loading sessions:', err);
       setError(err.response?.data?.error || '세션 목록을 불러오는데 실패했습니다.');
       setSessions([]); // 오류 시 빈 배열로 설정
     } finally {
@@ -84,11 +101,11 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 shadow-sm">
         <div className="text-red-800">{error}</div>
         <button
           onClick={loadSessions}
-          className="mt-2 text-sm text-red-600 hover:text-red-500"
+          className="btn-unified btn-unified-secondary btn-unified-sm mt-2"
         >
           다시 시도
         </button>
@@ -96,16 +113,27 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
     );
   }
 
+  const tableHeaders = [
+    (user.role === 'admin' || user.role === 'expert') && { label: '사용자', key: 'user' },
+    { label: '테스트 타입', key: 'test_type' },
+    { label: '진행률', key: 'progress' },
+    { label: '상태', key: 'status' },
+    { label: '점수', key: 'score' },
+    { label: '시작 시간', key: 'started_at' },
+    { label: '완료 시간', key: 'completed_at' },
+    { label: '상세 리포트', key: 'detailed_report' }
+  ].filter(Boolean); // null 또는 false 값을 제거합니다.
+
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="bg-white shadow-md rounded-lg border border-gray-200">
       <div className="px-4 py-5 sm:p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            내 테스트 세션
+            {user.role === 'admin' || user.role === 'expert' ? '모든 사용자 테스트 세션' : '내 테스트 세션'}
           </h3>
           <button
             onClick={loadSessions}
-            className="text-sm text-indigo-600 hover:text-indigo-500"
+            className="btn-unified btn-unified-ghost btn-unified-sm"
           >
             새로고침
           </button>
@@ -120,36 +148,28 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
             <p className="mt-1 text-sm text-gray-500">새로운 테스트를 시작해보세요.</p>
           </div>
         ) : (
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full w-full divide-y divide-gray-200"> {/* w-full 클래스 추가 */}
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    테스트 타입
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    진행률
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상태
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    점수
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    시작 시간
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    완료 시간
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    상세 리포트
-                  </th>
+                  {tableHeaders.map(header => (
+                    <th key={header.key} className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      {header.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {sessions.map((session) => (
                   <tr key={session.id} className="hover:bg-gray-50">
+                    {(user.role === 'admin' || user.role === 'expert') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>
+                          <div className="font-medium">{session.full_name || session.username || 'Unknown'}</div>
+                          <div className="text-gray-500">{session.email}</div>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {getTestTypeLabel(session.test_type)}
                     </td>
@@ -185,8 +205,8 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button
-                        onClick={() => setSelectedSessionId(session.id)}
-                        className="text-indigo-600 hover:text-indigo-500 font-medium"
+                        onClick={() => onViewDetailedReport?.(session.id)}
+                        className="btn-unified btn-unified-outline btn-unified-sm"
                       >
                         상세 보기
                       </button>
@@ -199,14 +219,14 @@ const SessionList: React.FC<SessionListProps> = ({ user }) => {
         )}
       </div>
 
-      {/* 상세 리포트 모달 */}
-      {selectedSessionId && (
+      {/* 상세 리포트 모달 (App.tsx에서 렌더링하도록 변경) */}
+      {/* {selectedSessionId && (
         <DetailedReport
           user={user}
           sessionId={selectedSessionId}
           onClose={() => setSelectedSessionId(null)}
         />
-      )}
+      )} */}
     </div>
   );
 };

@@ -26,6 +26,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
 
     try {
       const response = await authAPI.login(formData);
+      authAPI.setAuthToken(response.message); // message 필드에 토큰이 있다고 가정
       authAPI.setUser(response.user);
       onLoginSuccess(response.user);
     } catch (err: any) {
@@ -44,10 +45,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl border border-gray-200">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            AI Helper Evaluation System
+            AI Helper Admin
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             로그인하여 계속하세요
@@ -101,11 +102,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <button
               type="button"
               onClick={onSwitchToRegister}
-              className="text-indigo-600 hover:text-indigo-500 text-sm"
+              className="font-medium text-indigo-600 hover:text-indigo-500 text-sm"
             >
               계정이 없으신가요? 회원가입
             </button>

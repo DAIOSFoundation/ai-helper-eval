@@ -12,33 +12,36 @@ interface User {
 }
 import LoginForm from './components/Auth/LoginForm';
 import RegisterForm from './components/Auth/RegisterForm';
-import DashboardStats from './components/Dashboard/DashboardStats';
-import SessionList from './components/Dashboard/SessionList';
-import UserProgress from './components/Dashboard/UserProgress';
-import AdminUserProgress from './components/Dashboard/AdminUserProgress';
-import TestInterface from './components/Test/TestInterface';
+import Sidebar from './components/Layout/Sidebar';
+import HomePage from './components/Dashboard/HomePage';
+import ConversationTest from './components/Conversation/ConversationTest';
+import AIModelManagement from './components/Admin/AIModelManagement';
+import SettingsPage from './components/Settings/SettingsPage';
+import UserTestStats from './components/Dashboard/UserTestStats';
+import DetailedReport from './components/Reporting/DetailedReport';
 import './App.css';
 
 const queryClient = new QueryClient();
 
-type View = 'login' | 'register' | 'dashboard' | 'test';
+type View = 'login' | 'register' | 'home' | 'conversation' | 'ai-management' | 'settings' | 'user-stats' | 'detailed-report';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('login');
   const [user, setUser] = useState<User | null>(null);
-  const [selectedTestType, setSelectedTestType] = useState<string>('conversation');
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedUserForStats, setSelectedUserForStats] = useState<User | null>(null); // 추가: 관리자가 선택한 사용자 정보
 
   useEffect(() => {
     const savedUser = authAPI.getCurrentUser();
     if (savedUser) {
       setUser(savedUser);
-      setCurrentView('dashboard');
+      setCurrentView('home');
     }
   }, []);
 
   const handleLoginSuccess = (userData: User) => {
     setUser(userData);
-    setCurrentView('dashboard');
+    setCurrentView('home');
   };
 
   const handleLogout = () => {
@@ -51,15 +54,43 @@ function App() {
     setCurrentView('login');
   };
 
-  const handleStartConversation = () => {
-    setSelectedTestType('conversation');
-    setCurrentView('test');
+  const handleNavigate = (view: string) => {
+    // '내 통계'로 이동할 경우, 다른 사용자를 보고 있던 상태를 초기화
+    if (view === 'user-stats') {
+      setSelectedUserForStats(null);
+    }
+    setCurrentView(view as View);
+  };
+
+  const handleViewDetailedReport = (sessionId: string) => {
+    console.log('handleViewDetailedReport called with sessionId:', sessionId);
+    setSelectedSessionId(sessionId);
+    setCurrentView('detailed-report');
+    console.log('Current view set to:', 'detailed-report');
+    console.log('Selected session ID set to:', sessionId);
+  };
+
+  const handleBackFromDetailedReport = () => {
+    setSelectedSessionId(null);
+    setCurrentView('home');
+  };
+
+  // 추가: AdminUserProgress에서 특정 사용자 통계 보기를 요청했을 때
+  const handleViewUserStats = (userToView: User) => {
+    setSelectedUserForStats(userToView);
+    setCurrentView('user-stats');
+  };
+
+  // 추가: UserTestStats에서 '돌아가기' 버튼을 눌렀을 때
+  const handleBackFromUserStats = () => {
+    setSelectedUserForStats(null); // 선택된 사용자 초기화
+    setCurrentView('home');
   };
 
   const handleTestComplete = (result: any) => {
-    // 테스트 완료 후 대시보드로 돌아가기
+    // 테스트 완료 후 홈으로 돌아가기
     setTimeout(() => {
-      setCurrentView('dashboard');
+      setCurrentView('home');
     }, 3000);
   };
 
@@ -79,114 +110,98 @@ function App() {
             onSwitchToLogin={() => setCurrentView('login')}
           />
         );
-      case 'dashboard':
-        return (
-          <div className="min-h-screen bg-gray-50">
-            {/* 네비게이션 */}
-            <nav className="bg-white shadow">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                  <div className="flex items-center">
-                    <h1 className="text-xl font-semibold text-gray-900">
-                      AI Helper Evaluation System
-                    </h1>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-700">
-                      안녕하세요, {user?.full_name || user?.username}님
-                    </span>
-                    <button
-                      onClick={handleLogout}
-                      className="text-sm text-indigo-600 hover:text-indigo-500"
-                    >
-                      로그아웃
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </nav>
-
-            {/* 메인 컨텐츠 */}
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-              <div className="px-4 py-6 sm:px-0">
-                {/* 대화 시작 버튼 */}
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">AI 상담사와 대화하기</h2>
-                  <div className="max-w-md">
-                    <button
-                      onClick={handleStartConversation}
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-6 px-8 rounded-lg transition duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      <div className="text-center">
-                        <h3 className="text-xl font-semibold mb-2">💬 대화 시작하기</h3>
-                        <p className="text-sm opacity-90">
-                          AI 상담사와 자연스럽게 대화하세요.<br/>
-                          필요시 자동으로 진단 테스트가 진행됩니다.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                  <div className="mt-4 text-sm text-gray-600">
-                    <p>💡 <strong>진단 테스트 안내:</strong></p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>대화 중 특정 키워드가 감지되면 자동으로 진단 테스트가 시작됩니다</li>
-                      <li>CDI (아동 우울 척도), RCMAS (아동 불안 척도), BDI (벡 우울 척도) 순서로 진행됩니다</li>
-                      <li>각 테스트는 20개 질문으로 구성되어 있습니다</li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* 관리자용 전체 사용자 진행률 */}
-                {user && user.role === 'admin' && (
-                  <div className="mb-8">
-                    <AdminUserProgress currentUser={user} />
-                  </div>
-                )}
-
-                {/* 사용자별 진행률 */}
-                {user && user.role !== 'admin' && (
-                  <div className="mb-8">
-                    <UserProgress user={user} />
-                  </div>
-                )}
-
-                {/* 대시보드 통계 */}
-                <div className="mb-8">
-                  <DashboardStats stats={{
-                    overall_stats: {
-                      total_sessions: 0,
-                      total_users: 0,
-                      avg_score: 0,
-                      total_responses: 0
-                    },
-                    test_type_stats: [],
-                    recent_sessions: []
-                  }} />
-                </div>
-
-                {/* 사용자 세션 목록 */}
-                {user && <SessionList user={user} />}
-              </div>
-            </div>
-          </div>
-        );
-      case 'test':
+      case 'home':
+      case 'conversation':
+      case 'ai-management':
+      case 'settings':
+      case 'user-stats':
+      case 'detailed-report':
         return user ? (
-          <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="mb-6">
-                <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className="text-indigo-600 hover:text-indigo-500 text-sm"
-                >
-                  ← 대시보드로 돌아가기
-                </button>
+          <div className="min-h-screen bg-gray-50 flex">
+            {/* 사이드바 */}
+            <Sidebar currentView={currentView} onNavigate={handleNavigate} />
+            
+            {/* 메인 컨텐츠 영역 */}
+            <div className="flex-1 flex flex-col">
+              {/* 상단 네비게이션 */}
+              <nav className="bg-gradient-to-r from-indigo-600 to-indigo-700 shadow-lg border-b border-indigo-200">
+                <div className="px-6 py-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h1 className="text-xl font-semibold text-white">
+                        {currentView === 'home' && '홈'}
+                        {currentView === 'conversation' && '대화형 테스트'}
+                        {currentView === 'ai-management' && 'AI 모델 관리'}
+                        {currentView === 'settings' && '설정'}
+                        {currentView === 'user-stats' && '사용자 통계'}
+                        {currentView === 'detailed-report' && '상세 진단 리포트'}
+                      </h1>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={() => {
+                          setSelectedUserForStats(null); // '내 통계' 클릭 시 다른 사용자 통계 보기 초기화
+                          setCurrentView('user-stats');
+                        }}
+                        className="btn-unified btn-unified-sm bg-white text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700"
+                      >
+                        📊 내 통계
+                      </button>
+                      <span className="text-sm text-white font-medium">
+                        안녕하세요, {user.full_name || user.username}님
+                      </span>
+                      <button
+                        onClick={handleLogout}
+                        className="btn-unified btn-unified-secondary btn-unified-sm"
+                      >
+                        로그아웃
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+
+              {/* 페이지 컨텐츠 */}
+              <div className={`flex-1 overflow-y-auto ${currentView === 'conversation' ? 'h-full' : ''}`}>
+                {currentView === 'home' && (
+                  <HomePage 
+                    user={user} 
+                    onNavigate={handleNavigate} 
+                    onViewDetailedReport={handleViewDetailedReport}
+                    onViewUserStats={handleViewUserStats} // 추가: prop 전달
+                  />
+                )}
+                {currentView === 'conversation' && (
+                  <ConversationTest user={user} onTestComplete={handleTestComplete} />
+                )}
+                {currentView === 'ai-management' && user.role === 'admin' && (
+                  <AIModelManagement user={user} />
+                )}
+                {currentView === 'settings' && (
+                  <SettingsPage user={user} onLogout={handleLogout} />
+                )}
+                {currentView === 'user-stats' && (
+                  <UserTestStats
+                    user={selectedUserForStats || user} // 선택된 사용자가 있으면 해당 사용자, 없으면 로그인한 사용자
+                    onBack={handleBackFromUserStats} // 수정: 돌아가기 핸들러 연결
+                  />
+                )}
+                {(() => {
+                  console.log('Render condition check:', {
+                    currentView,
+                    selectedSessionId,
+                    user: !!user,
+                    condition: currentView === 'detailed-report' && selectedSessionId && user
+                  });
+                  return currentView === 'detailed-report' && selectedSessionId && user;
+                })() && (
+                  <DetailedReport
+                    user={user}
+                    sessionId={selectedSessionId}
+                    onBack={handleBackFromDetailedReport}
+                  />
+                )}
               </div>
-              <TestInterface
-                user={user}
-                testType={selectedTestType}
-                onTestComplete={handleTestComplete}
-              />
             </div>
           </div>
         ) : null;

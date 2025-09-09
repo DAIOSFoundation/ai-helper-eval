@@ -54,10 +54,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl border border-gray-200">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            AI Helper Evaluation System
+            AI Helper Admin
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             새 계정을 만들어보세요
@@ -160,11 +160,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-indigo-600 hover:text-indigo-500 text-sm"
+              className="font-medium text-indigo-600 hover:text-indigo-500 text-sm"
             >
               이미 계정이 있으신가요? 로그인
             </button>

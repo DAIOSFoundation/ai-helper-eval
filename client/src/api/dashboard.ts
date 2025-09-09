@@ -10,6 +10,7 @@ export interface TestSession {
   total_score: number;
   started_at: string;
   completed_at?: string;
+  session_round: number; // 추가: 회차 정보
 }
 
 export interface TestResponse {
@@ -63,9 +64,24 @@ export const dashboardAPI = {
   },
 
   getUserSessions: async (userId: string, limit: number = 50): Promise<TestSession[]> => {
+    console.log('API: Getting user sessions for:', userId);
     const response = await apiClient.get('/dashboard/sessions', {
       params: { user_id: userId, limit }
     });
+    console.log('API: User sessions response:', response.data);
+    return response.data;
+  },
+
+  getAllSessions: async (limit: number = 100): Promise<Array<TestSession & {
+    username: string;
+    email: string;
+    full_name?: string;
+  }>> => {
+    console.log('API: Getting all sessions');
+    const response = await apiClient.get('/admin/all-sessions', {
+      params: { limit }
+    });
+    console.log('API: All sessions response:', response.data);
     return response.data;
   },
 
@@ -129,19 +145,37 @@ export const dashboardAPI = {
     return response.data;
   },
 
+  getSessionGroupedScores: async (sessionId: string): Promise<{
+    grouped_scores: Array<{
+      question_group: number;
+      question_category: string;
+      question_count: number;
+      avg_ai_score: number;
+      avg_expert_score?: number; // 전문가 점수가 없을 수도 있으므로 optional
+      total_ai_score: number;
+      total_expert_score?: number; // 전문가 점수가 없을 수도 있으므로 optional
+    }>;
+    overall_stats: {
+      total_questions: number;
+      overall_avg_ai_score: number;
+      overall_avg_expert_score?: number; // 전문가 점수가 없을 수도 있으므로 optional
+      overall_total_ai_score: number;
+      overall_total_expert_score?: number; // 전문가 점수가 없을 수도 있으므로 optional
+    };
+  }> => {
+    const response = await apiClient.get(`/dashboard/session/${sessionId}/grouped-scores`);
+    return response.data;
+  },
+
   getExpertFeedback: async (responseId: string): Promise<{ feedback: ExpertFeedback[] }> => {
     const response = await apiClient.get(`/expert/feedback/${responseId}`);
     return response.data;
   },
 
-  submitExpertFeedback: async (feedbackData: {
-    response_id: string;
-    expert_id: string;
-    feedback_score: number;
-    feedback_comment?: string;
-    keywords_suggested?: string;
-  }): Promise<{ feedback_id: string; message: string }> => {
-    const response = await apiClient.post('/expert/feedback', feedbackData);
+  updateExpertScore: async (responseId: string, score: number): Promise<{ message: string }> => {
+    console.log(`API: Updating expert score for response ${responseId} with score: ${score}`);
+    const response = await apiClient.put(`/expert/score/${responseId}`, { score });
+    console.log('API: Expert score update response:', response.data);
     return response.data;
   }
 };
