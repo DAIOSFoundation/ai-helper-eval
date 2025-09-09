@@ -234,10 +234,20 @@ class ConversationSession:
             if self.current_test == 'cdi':
                 self.current_test = 'rcmas'
                 self.current_question_index = 0
+                # 새로운 RCMAS 세션 생성
+                self.db_session_id = db.create_test_session(
+                    user_id=self.user_id,
+                    test_type='rcmas'
+                )
                 return f"CDI 테스트가 완료되었습니다. 이제 RCMAS 테스트를 시작할게요.\n\n{TEST_QUESTIONS['rcmas'][0]}", False
             elif self.current_test == 'rcmas':
                 self.current_test = 'bdi'
                 self.current_question_index = 0
+                # 새로운 BDI 세션 생성
+                self.db_session_id = db.create_test_session(
+                    user_id=self.user_id,
+                    test_type='bdi'
+                )
                 return f"RCMAS 테스트가 완료되었습니다. 이제 BDI 테스트를 시작할게요.\n\n{TEST_QUESTIONS['bdi'][0]}", False
             else:
                 # 모든 테스트 완료
