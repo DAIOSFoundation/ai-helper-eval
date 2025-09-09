@@ -108,6 +108,7 @@ class ConversationSession:
         self.current_question_index = 0
         self.test_results = {}
         self.db_session_id = None
+        self.responses = []  # 테스트 응답 저장
         
     def detect_trigger(self, user_message):
         """트리거 키워드 감지"""
@@ -198,6 +199,14 @@ class ConversationSession:
                 question_group=question_group,
                 question_category=question_category
             )
+            
+            # 응답을 메모리에 저장
+            self.responses.append({
+                'test_type': self.current_test,
+                'question_index': self.current_question_index,
+                'score': calculated_score,
+                'response': user_message
+            })
         
         # 다음 질문으로 진행
         self.current_question_index += 1
@@ -241,7 +250,8 @@ class ConversationSession:
                 # 새로운 RCMAS 세션 생성
                 self.db_session_id = db.create_test_session(
                     user_id=self.user_id,
-                    test_type='rcmas'
+                    test_type='rcmas',
+                    total_questions=len(TEST_QUESTIONS['rcmas'])
                 )
                 return f"CDI 테스트가 완료되었습니다. 이제 RCMAS 테스트를 시작할게요.\n\n{TEST_QUESTIONS['rcmas'][0]}", False
             elif self.current_test == 'rcmas':
@@ -250,7 +260,8 @@ class ConversationSession:
                 # 새로운 BDI 세션 생성
                 self.db_session_id = db.create_test_session(
                     user_id=self.user_id,
-                    test_type='bdi'
+                    test_type='bdi',
+                    total_questions=len(TEST_QUESTIONS['bdi'])
                 )
                 return f"RCMAS 테스트가 완료되었습니다. 이제 BDI 테스트를 시작할게요.\n\n{TEST_QUESTIONS['bdi'][0]}", False
             else:
