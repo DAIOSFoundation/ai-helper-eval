@@ -129,11 +129,13 @@ npm run dev
 - `GET /api/dashboard/stats` - 대시보드 통계
 - `GET /api/dashboard/sessions` - 사용자 세션 목록
 - `GET /api/dashboard/session/<id>` - 세션 상세 정보
+- `GET /api/dashboard/session/<id>/grouped-scores` - 세션 그룹별 점수
 - `GET /api/dashboard/progress/<user_id>` - 사용자별 진행률
 - `GET /api/admin/all-users-progress` - 모든 사용자 진행률 (관리자)
 - `GET /api/admin/all-sessions` - 모든 사용자 세션 (관리자/전문가)
 
 ### 전문가 피드백
+- `PUT /api/expert/score/<response_id>` - 전문가 점수 업데이트
 - `POST /api/expert/feedback` - 전문가 피드백 제출
 - `GET /api/expert/feedback/<id>` - 피드백 조회
 
@@ -173,9 +175,31 @@ print(response.json()['response'])
 
 ## 🧪 테스트
 
+### API 테스트
 ```bash
-# API 테스트 스크립트 실행
-python test_api.py
+# API 헬스 체크
+curl http://localhost:5001/api/health
+
+# 세션 시작 테스트
+curl -X POST http://localhost:5001/api/start_session \
+  -H "Content-Type: application/json"
+
+# 메시지 전송 테스트
+curl -X POST http://localhost:5001/api/message \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "your-session-id", "message": "안녕하세요"}'
+```
+
+### 프론트엔드 테스트
+```bash
+# 클라이언트 디렉토리로 이동
+cd client
+
+# 개발 서버 실행
+npm run dev
+
+# 빌드 테스트
+npm run build
 ```
 
 ## 📊 성능 지표
@@ -187,11 +211,30 @@ python test_api.py
 
 ## 🔍 기술 스택
 
-- **Backend**: Flask, Python 3.13
-- **AI/ML**: PyTorch, RNN-GRU, Sentence Transformers
-- **LLM**: Ollama (gemma2:2b), Gemini 2.5 Flash
-- **한국어 처리**: kiwipiepy
-- **가속화**: Apple MPS (Metal Performance Shaders)
+### Frontend
+- **React 18**: 현대적인 UI 라이브러리
+- **TypeScript**: 타입 안전성 보장
+- **Vite**: 빠른 빌드 도구
+- **Chart.js**: 데이터 시각화
+- **Custom CSS**: 통일된 디자인 시스템
+
+### Backend
+- **Flask**: Python 웹 프레임워크
+- **SQLite**: 경량 데이터베이스
+- **Python 3.13**: 최신 Python 버전
+
+### AI/ML
+- **PyTorch**: 딥러닝 프레임워크
+- **RNN-GRU**: 순환 신경망 모델
+- **Sentence Transformers**: 문장 임베딩
+- **Ollama (gemma2:2b)**: 로컬 LLM 실행
+- **Gemini 2.5 Flash**: 클라우드 LLM API
+
+### 한국어 처리
+- **kiwipiepy**: 한국어 형태소 분석
+
+### 가속화
+- **Apple MPS**: Metal Performance Shaders
 
 ## 📁 프로젝트 구조
 
@@ -209,9 +252,17 @@ ai-helper-eval/
 │   │   │   ├── Dashboard/     # 대시보드 컴포넌트
 │   │   │   ├── Expert/        # 전문가 피드백
 │   │   │   ├── Reporting/     # 리포팅
-│   │   │   └── Test/          # 테스트 인터페이스
+│   │   │   ├── Test/          # 테스트 인터페이스
+│   │   │   ├── Layout/        # 레이아웃 컴포넌트
+│   │   │   ├── Conversation/  # 대화형 테스트
+│   │   │   ├── Admin/         # 관리자 기능
+│   │   │   └── Settings/      # 설정 페이지
+│   │   ├── data/              # 정적 데이터
+│   │   │   └── sidebarMenuItems.json
+│   │   ├── utils/             # 유틸리티 함수
 │   │   ├── App.tsx            # 메인 앱 컴포넌트
-│   │   └── main.tsx           # 앱 진입점
+│   │   ├── main.tsx           # 앱 진입점
+│   │   └── index.css          # 통합 CSS 스타일
 │   ├── package.json           # Node.js 의존성
 │   └── vite.config.ts         # Vite 설정
 ├── modules/                   # 핵심 AI 모듈
@@ -240,11 +291,29 @@ ai-helper-eval/
 
 ## 🤝 기여하기
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+이 프로젝트는 아동 및 청소년의 정서 상태 진단을 위한 AI 기반 대화 시스템입니다. 
+기여를 통해 더 나은 진단 도구를 만들어가고자 합니다.
+
+### 기여 방법
+1. **Fork the Project** - 프로젝트를 포크합니다
+2. **Create your Feature Branch** - `git checkout -b feature/AmazingFeature`
+3. **Commit your Changes** - `git commit -m 'Add some AmazingFeature'`
+4. **Push to the Branch** - `git push origin feature/AmazingFeature`
+5. **Open a Pull Request** - 풀 리퀘스트를 생성합니다
+
+### 기여 영역
+- **UI/UX 개선**: 사용자 인터페이스 및 사용자 경험 향상
+- **AI 모델 개선**: 진단 정확도 및 응답 품질 향상
+- **새로운 진단 척도**: 추가적인 정서 상태 진단 도구
+- **다국어 지원**: 다양한 언어로의 확장
+- **성능 최적화**: 시스템 성능 및 응답 속도 개선
+- **문서화**: 코드 문서화 및 사용자 가이드 개선
+
+### 개발 가이드라인
+- TypeScript를 사용한 타입 안전성 보장
+- React 컴포넌트 기반 모듈화
+- RESTful API 설계 원칙 준수
+- 한국어 자연어 처리 최적화
 
 ## 📄 라이선스
 
@@ -259,10 +328,22 @@ ai-helper-eval/
 
 ## 🙏 감사의 말
 
-- Ollama 팀 - 로컬 LLM 실행 환경 제공
-- Google AI - Gemini 2.5 Flash API 제공
-- PyTorch 팀 - 딥러닝 프레임워크 제공
-- Apple - MPS 가속화 지원
+### 핵심 기술 제공
+- **Ollama 팀** - 로컬 LLM 실행 환경 및 gemma2:2b 모델 제공
+- **Google AI** - Gemini 2.5 Flash API 및 클라우드 AI 서비스 제공
+- **PyTorch 팀** - 딥러닝 프레임워크 및 RNN-GRU 모델 지원
+- **Apple** - MPS (Metal Performance Shaders) 가속화 지원
+
+### 오픈소스 라이브러리
+- **React 팀** - 현대적인 UI 라이브러리 제공
+- **Vite 팀** - 빠른 빌드 도구 및 개발 환경 제공
+- **Chart.js 팀** - 데이터 시각화 라이브러리 제공
+- **Flask 팀** - 경량 Python 웹 프레임워크 제공
+- **SQLite 팀** - 경량 데이터베이스 엔진 제공
+
+### 한국어 처리
+- **kiwipiepy 팀** - 한국어 형태소 분석기 제공
+- **Sentence Transformers 팀** - 다국어 문장 임베딩 모델 제공
 
 ---
 
