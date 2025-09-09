@@ -181,12 +181,12 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
                           <div
                             className="bg-indigo-600 h-2 rounded-full"
                             style={{
-                              width: `${(session.completed_questions / session.total_questions) * 100}%`
+                              width: `${Math.min((session.completed_questions / session.total_questions) * 100, 100)}%`
                             }}
                           ></div>
                         </div>
                         <span className="text-xs">
-                          {session.completed_questions}/{session.total_questions}
+                          {Math.min(session.completed_questions, session.total_questions)}/{session.total_questions}
                         </span>
                       </div>
                     </td>

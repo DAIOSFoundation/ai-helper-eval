@@ -204,11 +204,13 @@ class ConversationSession:
         
         # 진행률 업데이트
         if self.db_session_id:
+            # 실제 점수 합계 계산
+            actual_score = sum(response.get('score', 0) for response in self.responses if response.get('test_type') == self.current_test)
             db.update_test_session(
                 self.db_session_id,
                 status='in_progress',
                 completed_questions=self.current_question_index,
-                total_score=self.current_question_index
+                total_score=actual_score
             )
         
         if self.current_question_index < len(TEST_QUESTIONS[self.current_test]):
@@ -222,11 +224,13 @@ class ConversationSession:
             
             # 데이터베이스 업데이트
             if self.db_session_id:
+                # 실제 점수 합계 계산
+                actual_score = sum(response.get('score', 0) for response in self.responses if response.get('test_type') == self.current_test)
                 db.update_test_session(
                     self.db_session_id,
                     status='completed',
                     completed_questions=len(TEST_QUESTIONS[self.current_test]),
-                    total_score=len(TEST_QUESTIONS[self.current_test]),
+                    total_score=actual_score,
                     completed_at=datetime.now().isoformat()
                 )
             
