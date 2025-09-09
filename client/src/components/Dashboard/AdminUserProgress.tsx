@@ -50,13 +50,9 @@ const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onVi
   const loadAllUsersProgress = async () => {
     try {
       setLoading(true);
-      console.log('Loading all users progress...');
       const response = await dashboardAPI.getAllUsersProgress();
-      console.log('All users progress response:', response);
-      console.log('Users count:', response.users?.length || 0);
       setUsers(response.users || []);
     } catch (err: any) {
-      console.error('Error loading all users progress:', err);
       setError(err.response?.data?.error || '사용자 진행률을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);

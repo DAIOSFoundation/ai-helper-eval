@@ -76,11 +76,9 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ user, onViewDetailedRep
   const loadStats = async () => {
     try {
       setLoading(true);
-      console.log('Loading dashboard stats for user:', user.id, 'role:', user.role);
       
       // 관리자나 전문가는 모든 사용자의 통계를, 일반 사용자는 자신의 통계만 조회
       const statsData = await dashboardAPI.getStats();
-      console.log('Dashboard stats loaded:', statsData);
       
       let overallProgressSummary: OverallProgressSummary | undefined;
 

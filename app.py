@@ -280,7 +280,6 @@ def get_chat_response(user_message, conversation_history):
         return response['message']['content']
         
     except Exception as e:
-        print(f"대화 응답 생성 오류: {e}")
         return "죄송해, 지금 응답하기 어려워. 다시 말해줄 수 있어?"
 
 @app.route('/api/start_session', methods=['POST'])
