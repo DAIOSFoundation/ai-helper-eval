@@ -32,7 +32,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onNavigate, onViewDetailedRep
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Home</h1>
               <p className="text-gray-700 text-lg">
-                {user.full_name || user.username}님! AI Helper Admin 대시보드 입니다.
+                {user.full_name || user.username}님! AI Life Helper Admin 대시보드 입니다.
               </p>
             </div>
           </div>

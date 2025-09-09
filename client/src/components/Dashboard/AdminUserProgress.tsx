@@ -126,14 +126,15 @@ const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onVi
   ];
 
   return (
-    // mt-6 클래스 제거: DashboardStats 내부에서 렌더링되므로 불필요
     <div className="bg-white shadow-md rounded-lg border border-gray-200">
-      <div className="px-4 py-5 sm:p-6">
-        <div className="flex justify-between items-center mb-4"> {/* mb-6 -> mb-4로 변경 */}
+      {/* 헤더 부분 */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex justify-between items-center">
           {/* 제목 스타일 수정: 아이콘 포함 및 텍스트 크기 조정 */}
+          {/* 텍스트를 감싸는 span을 제거하고 h3의 직접적인 자식으로 변경하여 section-title의 폰트 스타일을 따르고 수직 정렬을 맞춥니다. */}
           <h3 className="section-title flex items-center">
             <span className="text-2xl mr-3">👥</span> {/* 아이콘 */}
-            <span className="text-xl font-bold text-gray-900">전체 사용자 테스트 진행률</span> {/* 텍스트 스타일 조정 */}
+            전체 사용자 테스트 진행률
           </h3>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-500">
@@ -147,7 +148,9 @@ const AdminUserProgress: React.FC<AdminUserProgressProps> = ({ currentUser, onVi
             </button>
           </div>
         </div>
-
+      </div>
+      {/* 내용 부분 */}
+      <div className="px-6 py-6">
         {users.length === 0 ? (
           <div className="text-center py-8">
             <h3 className="text-sm font-medium text-gray-900">사용자가 없습니다</h3>

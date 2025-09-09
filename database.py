@@ -443,13 +443,27 @@ class DatabaseManager:
             cursor.execute("""
                 SELECT 
                     COUNT(DISTINCT ts.id) as total_sessions,
-                    COUNT(DISTINCT ts.user_id) as total_users,
                     AVG(ts.total_score) as avg_score,
                     COUNT(tr.id) as total_responses
                 FROM test_sessions ts
                 LEFT JOIN test_responses tr ON ts.id = tr.session_id
             """)
-            overall_stats = dict(cursor.fetchone())
+            session_stats = dict(cursor.fetchone())
+            
+            # 실제 사용자 수 조회 (관리자 제외)
+            cursor.execute("""
+                SELECT COUNT(*) as total_users
+                FROM users
+                WHERE role != 'admin'
+            """)
+            user_count = cursor.fetchone()['total_users']
+            
+            overall_stats = {
+                'total_sessions': session_stats['total_sessions'],
+                'total_users': user_count,
+                'avg_score': session_stats['avg_score'],
+                'total_responses': session_stats['total_responses']
+            }
             
             # 테스트 타입별 통계
             cursor.execute("""

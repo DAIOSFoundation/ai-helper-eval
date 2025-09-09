@@ -126,9 +126,10 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
 
   return (
     <div className="bg-white shadow-md rounded-lg border border-gray-200">
-      <div className="px-4 py-5 sm:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex justify-between items-center">
+          <h3 className="section-title flex items-center">
+            <span className="text-2xl mr-3">📋</span>
             {user.role === 'admin' || user.role === 'expert' ? '모든 사용자 테스트 세션' : '내 테스트 세션'}
           </h3>
           <button
@@ -138,7 +139,8 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
             새로고침
           </button>
         </div>
-
+      </div>
+      <div className="px-6 py-6">
         {sessions.length === 0 ? (
           <div className="text-center py-8">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,16 +219,16 @@ const SessionList: React.FC<SessionListProps> = ({ user, onViewDetailedReport })
             </table>
           </div>
         )}
+        
+        {/* 상세 리포트 모달 (App.tsx에서 렌더링하도록 변경) */}
+        {/* {selectedSessionId && (
+          <DetailedReport
+            user={user}
+            sessionId={selectedSessionId}
+            onClose={() => setSelectedSessionId(null)}
+          />
+        )} */}
       </div>
-
-      {/* 상세 리포트 모달 (App.tsx에서 렌더링하도록 변경) */}
-      {/* {selectedSessionId && (
-        <DetailedReport
-          user={user}
-          sessionId={selectedSessionId}
-          onClose={() => setSelectedSessionId(null)}
-        />
-      )} */}
     </div>
   );
 };

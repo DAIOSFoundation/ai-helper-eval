@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
     <div className="w-40 bg-white shadow-lg min-h-screen border-r border-gray-200 flex-shrink-0">
       <div className="p-2">
         <h2 className="text-xl font-bold text-indigo-800 mb-4 text-center px-2">
-          AI Helper
+          AI Life Helper
         </h2>
         
         <nav className="space-y-1">
