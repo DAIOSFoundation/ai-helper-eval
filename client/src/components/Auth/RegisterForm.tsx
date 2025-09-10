@@ -53,17 +53,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-xl border border-gray-200">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-lg border border-gray-200">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="text-center text-2xl font-bold text-gray-900 mb-4">
             AI Helper Admin
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 mb-6">
             새 계정을 만들어보세요
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -154,7 +154,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="btn-unified btn-unified-primary btn-unified-lg w-full"
             >
               {loading ? '회원가입 중...' : '회원가입'}
             </button>
@@ -164,7 +164,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="font-medium text-indigo-600 hover:text-indigo-500 text-sm"
+              className="btn-unified btn-unified-ghost btn-unified-sm text-indigo-600 hover:text-indigo-500"
             >
               이미 계정이 있으신가요? 로그인
             </button>
