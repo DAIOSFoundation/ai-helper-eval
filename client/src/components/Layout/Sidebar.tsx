@@ -1,9 +1,19 @@
 import React from 'react';
 import menuItemsData from '../../data/sidebarMenuItems.json'; // JSON 파일 임포트
 
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  full_name?: string;
+  role: string;
+  created_at: string;
+}
+
 interface SidebarProps {
   currentView: string;
   onNavigate: (view: string) => void;
+  user: User; // 사용자 정보 추가
 }
 
 interface MenuItem {
@@ -12,9 +22,19 @@ interface MenuItem {
   icon: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, user }) => {
   // JSON 파일에서 불러온 데이터를 사용합니다.
-  const menuItems: MenuItem[] = menuItemsData;
+  const allMenuItems: MenuItem[] = menuItemsData;
+  
+  // 사용자 권한에 따라 메뉴 필터링
+  const menuItems = allMenuItems.filter(item => {
+    // AI 관리 메뉴는 관리자만 볼 수 있음
+    if (item.id === 'ai-management') {
+      return user.role === 'admin';
+    }
+    // 다른 메뉴들은 모든 사용자가 볼 수 있음
+    return true;
+  });
 
   return (
     <div className="w-40 bg-white shadow-lg min-h-screen border-r border-gray-200 flex-shrink-0">

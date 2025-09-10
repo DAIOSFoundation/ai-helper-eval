@@ -1,12 +1,38 @@
-# AI Helper Evaluation System v1.6.0 Release Notes
+# AI Helper Evaluation System v1.6.1 Release Notes
 
-**릴리즈 날짜**: 2025년 9월 9일  
-**버전**: 1.6.0  
-**코드명**: "UI/UX Enhancement"  
+**릴리즈 날짜**: 2025년 9월 10일  
+**버전**: 1.6.1  
+**코드명**: "Security & Permission Enhancement"  
 
 ---
 
 ## 🎉 주요 하이라이트
+
+AI Helper Evaluation System v1.6.1 패치가 출시되었습니다! 이번 패치에서는 권한 기반 접근 제어를 강화하고, API 호환성 문제를 해결하여 더욱 안전하고 안정적인 시스템을 제공합니다.
+
+---
+
+## 🔒 v1.6.1 패치 노트 (2025-09-10)
+
+### 보안 및 권한 관리 강화
+- **권한 기반 UI 제어**: 사용자 역할(admin/expert/user)에 따른 메뉴 표시 제어
+- **AI 관리 페이지 접근 제한**: 관리자만 AI 모델 관리 페이지에 접근할 수 있도록 제한
+- **사이드바 메뉴 필터링**: 사용자 권한에 따라 사이드바 메뉴 동적 필터링
+- **네비게이션 보안 강화**: 직접 URL 접근 및 프로그래밍적 접근 시도 차단
+
+### API 호환성 개선
+- **HTTP 헤더 인코딩 수정**: 한글 헤더 값의 ISO-8859-1 호환성 문제 해결
+- **Axios 요청 인터셉터 개선**: 헤더 값 안전성 검증 및 자동 인코딩 처리
+- **API 응답 안정성 향상**: 인코딩 관련 오류 방지 및 안정적인 API 통신 보장
+
+### 사용자 경험 개선
+- **관리자 권한 확인**: 데이터베이스 직접 수정을 통한 사용자 권한 관리 지원
+- **오류 메시지 개선**: 권한 부족 시 적절한 경고 메시지 표시
+- **UI 일관성 향상**: 권한별 인터페이스 요소 일관성 보장
+
+---
+
+## 🎨 v1.6.0 주요 기능 (2025-09-09)
 
 AI Helper Evaluation System v1.6.0이 출시되었습니다! 이번 릴리즈에서는 사용자 인터페이스와 경험을 대폭 개선하고, 관리자 기능을 강화하여 더욱 직관적이고 효율적인 시스템을 제공합니다.
 
@@ -106,21 +132,397 @@ AI Helper Evaluation System v1.6.0이 출시되었습니다! 이번 릴리즈에
 ## 🛠️ API 엔드포인트
 
 ### 세션 관리
-```
-POST /api/start_session     - 새 세션 시작
-POST /api/reset_session     - 세션 초기화
+
+#### POST /api/start_session - 새 세션 시작
+**요청:**
+```json
+{
+  "user_id": "4dd05474-94d3-46cb-a811-25a064d405e4"
+}
 ```
 
-### 대화 처리
+**응답:**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "message": "새 세션이 시작되었습니다.",
+  "welcome_message": "안녕! 오늘 기분은 어때? 편하게 이야기해보자."
+}
 ```
-POST /api/message           - 메시지 처리
-GET  /api/session_history   - 대화 히스토리
-GET  /api/status           - 세션 상태
+
+#### POST /api/message - 메시지 처리
+**요청:**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "message": "요즘 너무 우울해서 힘들어"
+}
+```
+
+**응답 (일반 대화):**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "response": "힘든 시간을 보내고 있구나. 어떤 일로 우울한 기분이 드는지 더 자세히 얘기해줄 수 있어?",
+  "intent": "chat",
+  "is_complete": false,
+  "diagnosis_result": null
+}
+```
+
+**응답 (테스트 시작):**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "response": "야, 요즘 공부는 어때? 어떤 기분이야?",
+  "intent": "test_start",
+  "is_complete": false,
+  "diagnosis_result": null
+}
+```
+
+**응답 (테스트 완료):**
+```json
+{
+  "session_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "response": "모든 진단 테스트가 완료되었습니다. 대화를 계속할 수 있어요.",
+  "intent": "test",
+  "is_complete": true,
+  "diagnosis_result": {
+    "cdi_score": 20,
+    "rcmas_score": 20,
+    "bdi_score": 20,
+    "interpretation": {
+      "cdi": "CDI 테스트 완료: 20개 질문",
+      "rcmas": "RCMAS 테스트 완료: 20개 질문",
+      "bdi": "BDI 테스트 완료: 20개 질문"
+    }
+  }
+}
+```
+
+### 사용자 인증
+
+#### POST /api/auth/register - 사용자 회원가입
+**요청:**
+```json
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123",
+  "full_name": "홍길동"
+}
+```
+
+**응답:**
+```json
+{
+  "message": "회원가입이 완료되었습니다.",
+  "user_id": "e690f94b-158e-40df-8bc7-d0845c7a3161"
+}
+```
+
+#### POST /api/auth/login - 사용자 로그인
+**요청:**
+```json
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+```
+
+**응답:**
+```json
+{
+  "message": "로그인 성공",
+  "user": {
+    "id": "e690f94b-158e-40df-8bc7-d0845c7a3161",
+    "username": "testuser",
+    "email": "test@example.com",
+    "full_name": "홍길동",
+    "role": "user",
+    "created_at": "2025-09-10T10:30:00.000Z"
+  }
+}
+```
+
+### 대시보드 API
+
+#### GET /api/dashboard/stats - 대시보드 통계
+**요청:**
+```
+GET /api/dashboard/stats
+```
+
+**응답:**
+```json
+{
+  "overall_stats": {
+    "total_sessions": 45,
+    "total_users": 12,
+    "avg_score": 2.3,
+    "total_responses": 890
+  },
+  "test_type_stats": [
+    {
+      "test_type": "cdi",
+      "session_count": 15,
+      "avg_score": 2.1,
+      "completed_count": 12
+    },
+    {
+      "test_type": "rcmas",
+      "session_count": 15,
+      "avg_score": 2.4,
+      "completed_count": 10
+    },
+    {
+      "test_type": "bdi",
+      "session_count": 15,
+      "avg_score": 2.5,
+      "completed_count": 8
+    }
+  ],
+  "recent_sessions": [
+    {
+      "id": "session-123",
+      "user_id": "user-456",
+      "username": "testuser",
+      "full_name": "홍길동",
+      "test_type": "cdi",
+      "status": "completed",
+      "total_questions": 20,
+      "completed_questions": 20,
+      "total_score": 42.5,
+      "started_at": "2025-09-10T10:00:00.000Z",
+      "completed_at": "2025-09-10T10:15:00.000Z",
+      "session_round": 1
+    }
+  ]
+}
+```
+
+#### GET /api/dashboard/sessions - 사용자 세션 목록
+**요청:**
+```
+GET /api/dashboard/sessions?user_id=e690f94b-158e-40df-8bc7-d0845c7a3161&limit=50
+```
+
+**응답:**
+```json
+[
+  {
+    "id": "session-123",
+    "user_id": "e690f94b-158e-40df-8bc7-d0845c7a3161",
+    "test_type": "cdi",
+    "status": "completed",
+    "total_questions": 20,
+    "completed_questions": 20,
+    "total_score": 42.5,
+    "started_at": "2025-09-10T10:00:00.000Z",
+    "completed_at": "2025-09-10T10:15:00.000Z",
+    "session_round": 1
+  },
+  {
+    "id": "session-124",
+    "user_id": "e690f94b-158e-40df-8bc7-d0845c7a3161",
+    "test_type": "rcmas",
+    "status": "in_progress",
+    "total_questions": 20,
+    "completed_questions": 15,
+    "total_score": 32.1,
+    "started_at": "2025-09-10T11:00:00.000Z",
+    "completed_at": null,
+    "session_round": 1
+  }
+]
+```
+
+#### GET /api/dashboard/session/{session_id} - 세션 상세 정보
+**요청:**
+```
+GET /api/dashboard/session/session-123
+```
+
+**응답:**
+```json
+{
+  "session": {
+    "id": "session-123",
+    "user_id": "e690f94b-158e-40df-8bc7-d0845c7a3161",
+    "test_type": "cdi",
+    "status": "completed",
+    "total_questions": 20,
+    "completed_questions": 20,
+    "total_score": 42.5,
+    "started_at": "2025-09-10T10:00:00.000Z",
+    "completed_at": "2025-09-10T10:15:00.000Z",
+    "session_round": 1
+  },
+  "responses": [
+    {
+      "id": "response-1",
+      "session_id": "session-123",
+      "question_id": "0",
+      "question_text": "야, 요즘 공부는 어때? 어떤 기분이야?",
+      "user_response": "공부가 너무 힘들어서 스트레스 받아",
+      "detected_intent": "answer",
+      "calculated_score": 2.3,
+      "expert_score": null,
+      "keywords": "[\"공부\", \"힘들\", \"스트레스\"]",
+      "created_at": "2025-09-10T10:01:00.000Z"
+    }
+  ]
+}
+```
+
+#### GET /api/dashboard/progress/{user_id} - 사용자 진행률
+**요청:**
+```
+GET /api/dashboard/progress/e690f94b-158e-40df-8bc7-d0845c7a3161
+```
+
+**응답:**
+```json
+{
+  "user_id": "e690f94b-158e-40df-8bc7-d0845c7a3161",
+  "overall_progress": {
+    "completed_questions": 35,
+    "total_questions": 60,
+    "progress_percentage": 58.33
+  },
+  "test_progress": {
+    "cdi": {
+      "completed_questions": 20,
+      "total_questions": 20,
+      "progress_percentage": 100.0,
+      "is_completed": true,
+      "last_activity": "2025-09-10T10:15:00.000Z"
+    },
+    "rcmas": {
+      "completed_questions": 15,
+      "total_questions": 20,
+      "progress_percentage": 75.0,
+      "is_completed": false,
+      "last_activity": "2025-09-10T11:30:00.000Z"
+    },
+    "bdi": {
+      "completed_questions": 0,
+      "total_questions": 20,
+      "progress_percentage": 0.0,
+      "is_completed": false,
+      "last_activity": null
+    }
+  }
+}
+```
+
+### 관리자 API
+
+#### GET /api/admin/all-sessions - 모든 세션 조회 (관리자/전문가용)
+**요청:**
+```
+GET /api/admin/all-sessions?limit=100
+```
+
+**응답:**
+```json
+[
+  {
+    "id": "session-123",
+    "user_id": "user-456",
+    "username": "testuser1",
+    "email": "test1@example.com",
+    "full_name": "홍길동",
+    "test_type": "cdi",
+    "status": "completed",
+    "total_questions": 20,
+    "completed_questions": 20,
+    "total_score": 42.5,
+    "started_at": "2025-09-10T10:00:00.000Z",
+    "completed_at": "2025-09-10T10:15:00.000Z",
+    "session_round": 1
+  }
+]
+```
+
+#### GET /api/admin/all-users-progress - 모든 사용자 진행률 (관리자용)
+**요청:**
+```
+GET /api/admin/all-users-progress
+```
+
+**응답:**
+```json
+{
+  "users": [
+    {
+      "id": "user-456",
+      "username": "testuser1",
+      "email": "test1@example.com",
+      "full_name": "홍길동",
+      "role": "user",
+      "created_at": "2025-09-10T09:00:00.000Z",
+      "progress": {
+        "overall_progress": {
+          "completed_questions": 35,
+          "total_questions": 60,
+          "progress_percentage": 58.33
+        },
+        "test_progress": {
+          "cdi": {
+            "completed_questions": 20,
+            "total_questions": 20,
+            "progress_percentage": 100.0,
+            "is_completed": true,
+            "last_activity": "2025-09-10T10:15:00.000Z"
+          }
+        }
+      }
+    }
+  ],
+  "total_users": 1
+}
+```
+
+### 전문가 점수 API
+
+#### PUT /api/expert/score/{response_id} - 전문가 점수 업데이트
+**요청:**
+```json
+{
+  "score": 3.5
+}
+```
+
+**응답:**
+```json
+{
+  "message": "전문가 점수가 업데이트되었습니다."
+}
+```
+
+**오류 응답:**
+```json
+{
+  "error": "점수는 0-5 사이의 값이어야 합니다."
+}
 ```
 
 ### 시스템 관리
+
+#### GET /api/health - 헬스 체크
+**요청:**
 ```
-GET  /api/health           - 헬스 체크
+GET /api/health
+```
+
+**응답:**
+```json
+{
+  "status": "healthy",
+  "active_sessions": 3
+}
 ```
 
 ---

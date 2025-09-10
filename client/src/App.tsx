@@ -55,6 +55,12 @@ function App() {
   };
 
   const handleNavigate = (view: string) => {
+    // AI 관리 페이지는 관리자만 접근 가능
+    if (view === 'ai-management' && user?.role !== 'admin') {
+      console.warn('AI 관리 페이지는 관리자만 접근할 수 있습니다.');
+      return;
+    }
+    
     // '내 통계'로 이동할 경우, 다른 사용자를 보고 있던 상태를 초기화
     if (view === 'user-stats') {
       setSelectedUserForStats(null);
@@ -119,7 +125,7 @@ function App() {
         return user ? (
           <div className="min-h-screen bg-gray-50 flex">
             {/* 사이드바 */}
-            <Sidebar currentView={currentView} onNavigate={handleNavigate} />
+            <Sidebar currentView={currentView} onNavigate={handleNavigate} user={user} />
             
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 flex flex-col">
