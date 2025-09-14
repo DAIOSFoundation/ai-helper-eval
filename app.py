@@ -683,4 +683,4 @@ if __name__ == '__main__':
     ws_thread = threading.Thread(target=start_ws_loop, daemon=True)
     ws_thread.start()
     
-    socketio.run(app, host='0.0.0.0', port=5001, debug=True)
+    socketio.run(app, host='0.0.0.0', port=18080, debug=True)
