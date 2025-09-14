@@ -5,15 +5,15 @@ import re
 import json
 import ollama
 from collections import defaultdict
-from konlpy.tag import Okt
+# from konlpy.tag import Okt  # Java 오류로 인해 비활성화
 
 class SimilarityScorer:
     def __init__(self, model_name="gemma2:2b"):
         self.model_name = model_name
         self.use_ollama = True  # 항상 Ollama 사용
         
-        # 한국어 형태소 분석기 초기화
-        self.okt = Okt()
+        # 한국어 형태소 분석기 초기화 (Java 오류로 인해 비활성화)
+        # self.okt = Okt()
         
         # 평가 기준 템플릿 정의
         self.evaluation_templates = {
@@ -423,7 +423,7 @@ class SimilarityScorer:
             }.get(level, level)
             criteria_text += f"- {level_name}: {', '.join(keywords)}\n"
         
-        # 사용자 답변의 어간 추출
+        # 사용자 답변의 어간 추출 (간단한 버전)
         user_stems = self._extract_korean_stems(user_response)
         user_normalized = " ".join(user_stems) if user_stems else user_response
         

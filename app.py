@@ -4,9 +4,12 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import ollama
 import json
 import uuid
+import asyncio
+import websockets
 from datetime import datetime
 from database import db
 from modules.similarity_scorer import SimilarityScorer
@@ -18,9 +21,18 @@ CORS(app)
 app.config['JSON_AS_ASCII'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
+# SocketIO 초기화
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 # 전역 변수로 세션 관리
 similarity_scorer = SimilarityScorer()
 sessions = {}
+
+# 웹소켓 연결 유지용 변수
+ws_connection = None
+ws_lock = asyncio.Lock()
+WS_URI = "wss://proxy4.aitrain.ktcloud.com:10290/ws"
+WS_COOKIE = "appproxy_permit=NzZkYjNiZDQwMjA0YjFjNzI5NzBhYmI0MjhlZjIzMmI0NDBlYzlmMDk5OWNlM2I4Zjk5NGZkY2U3NGEzZDgzNw=="
 
 # 트리거 키워드 (진단 테스트 시작 조건)
 TRIGGER_KEYWORDS = [
@@ -97,6 +109,65 @@ TEST_QUESTIONS = {
         "건강에 대해 걱정돼?"
     ]
 }
+
+# 웹소켓 연결 유지 함수들
+async def ws_connect_loop():
+    """웹소켓 연결 유지 루프"""
+    global ws_connection
+    headers = {"Cookie": WS_COOKIE}
+    while True:
+        try:
+            async with websockets.connect(WS_URI, additional_headers=headers) as websocket:
+                ws_connection = websocket
+                print("웹소켓 연결 성공")
+                while True:
+                    # 연결 유지용 간단한 recv (서버 ping/pong 대기)
+                    await websocket.recv()
+        except Exception as e:
+            print("웹소켓 연결 에러:", e)
+            ws_connection = None
+            await asyncio.sleep(5)  # 재연결 대기
+
+async def send_ws_ping(message: str = "ping"):
+    """웹소켓 핑 전송"""
+    global ws_connection
+    async with ws_lock:
+        if ws_connection:
+            try:
+                await ws_connection.send(message)
+                print(f"핑 전송: {message}")
+            except Exception as e:
+                print("핑 전송 실패:", e)
+                ws_connection = None
+        else:
+            print("웹소켓 연결 없음, 핑 전송 불가")
+
+# SocketIO 이벤트 핸들러
+@socketio.on('connect')
+def handle_connect():
+    print('클라이언트 연결됨')
+    emit('connected', {'data': 'Connected to server'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('클라이언트 연결 해제됨')
+
+@socketio.on('ping')
+def handle_ping(data):
+    print(f'핑 수신: {data}')
+    emit('pong', {'message': f'pong: {data}', 'timestamp': datetime.now().isoformat()})
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    room = data.get('room', 'default')
+    join_room(room)
+    emit('joined_room', {'room': room})
+
+@socketio.on('leave_room')
+def handle_leave_room(data):
+    room = data.get('room', 'default')
+    leave_room(room)
+    emit('left_room', {'room': room})
 
 class ConversationSession:
     def __init__(self, session_id, user_id=None):
@@ -329,6 +400,9 @@ def start_session():
 @app.route('/api/message', methods=['POST'])
 def process_message():
     """메시지 처리"""
+    # 웹소켓 핑 전송
+    asyncio.create_task(send_ws_ping("train api 호출"))
+    
     data = request.get_json()
     
     if not data or 'session_id' not in data or 'message' not in data:
@@ -596,5 +670,17 @@ if __name__ == '__main__':
     print("  GET /api/dashboard/session/<id>/grouped-scores - 세션 그룹별 점수")
     print("=== 전문가 점수 ===")
     print("  PUT /api/expert/score/<response_id> - 전문가 점수 업데이트")
+    print("=== 웹소켓 ===")
+    print("  WebSocket 연결 유지 중...")
     
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    # 웹소켓 연결 시작 (별도 스레드에서)
+    import threading
+    def start_ws_loop():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(ws_connect_loop())
+    
+    ws_thread = threading.Thread(target=start_ws_loop, daemon=True)
+    ws_thread.start()
+    
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True)

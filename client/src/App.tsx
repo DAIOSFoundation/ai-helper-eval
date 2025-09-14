@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { authAPI } from './api/auth';
+import { useWebSocket } from './hooks/useWebSocket';
 
 interface User {
   id: string;
@@ -28,6 +29,9 @@ type View = 'login' | 'register' | 'home' | 'conversation' | 'ai-management' | '
 function App() {
   const [currentView, setCurrentView] = useState<View>('login');
   const [user, setUser] = useState<User | null>(null);
+
+  // 웹소켓 연결 (연결 유지용)
+  const { isConnected, lastPong } = useWebSocket();
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedUserForStats, setSelectedUserForStats] = useState<User | null>(null); // 추가: 관리자가 선택한 사용자 정보
 
@@ -60,7 +64,7 @@ function App() {
       console.warn('AI 관리 페이지는 관리자만 접근할 수 있습니다.');
       return;
     }
-    
+
     // '내 통계'로 이동할 경우, 다른 사용자를 보고 있던 상태를 초기화
     if (view === 'user-stats') {
       setSelectedUserForStats(null);
@@ -126,7 +130,7 @@ function App() {
           <div className="min-h-screen bg-gray-50 flex">
             {/* 사이드바 */}
             <Sidebar currentView={currentView} onNavigate={handleNavigate} user={user} />
-            
+
             {/* 메인 컨텐츠 영역 */}
             <div className="flex-1 flex flex-col">
               {/* 상단 네비게이션 */}
@@ -170,9 +174,9 @@ function App() {
               {/* 페이지 컨텐츠 */}
               <div className={`flex-1 overflow-y-auto ${currentView === 'conversation' ? 'h-full' : ''}`}>
                 {currentView === 'home' && (
-                  <HomePage 
-                    user={user} 
-                    onNavigate={handleNavigate} 
+                  <HomePage
+                    user={user}
+                    onNavigate={handleNavigate}
                     onViewDetailedReport={handleViewDetailedReport}
                     onViewUserStats={handleViewUserStats} // 추가: prop 전달
                   />
@@ -201,12 +205,12 @@ function App() {
                   });
                   return currentView === 'detailed-report' && selectedSessionId && user;
                 })() && (
-                  <DetailedReport
-                    user={user}
-                    sessionId={selectedSessionId}
-                    onBack={handleBackFromDetailedReport}
-                  />
-                )}
+                    <DetailedReport
+                      user={user}
+                      sessionId={selectedSessionId}
+                      onBack={handleBackFromDetailedReport}
+                    />
+                  )}
               </div>
             </div>
           </div>
@@ -219,6 +223,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="App">
+        {/* 웹소켓 연결 상태는 백그라운드에서만 작동 (화면에 표시하지 않음) */}
         {renderContent()}
       </div>
     </QueryClientProvider>
